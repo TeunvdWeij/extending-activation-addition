@@ -1,0 +1,60 @@
+model.reset_all()
+# t = tokenizer.encode("A cow", return_tensors="pt")
+# print("Tokens", t)
+# model.get_logits(t)
+model.generate_text("Cow")
+acts = model.get_last_activations(28)
+
+print("-----NORMAL-----")
+model.reset_all()
+model.set_add_activations(28, 0*acts)
+for _ in range(5):
+    print(model.generate_text("My favourite animal is", do_sample=True, max_length=20, temperature=0.5))
+    
+print("-----0.5-----")
+model.reset_all()
+model.set_add_activations(28, 0.5*acts)
+for _ in range(5):
+    print(model.generate_text("My favourite animal is", do_sample=True, max_length=20, temperature=0.5))
+    
+print("-----1-----")
+model.reset_all()
+model.set_add_activations(28, 1*acts)
+for _ in range(5):
+    print(model.generate_text("My favourite animal is", do_sample=True, max_length=20, temperature=0.5))
+    
+print("-----5-----")
+model.reset_all()
+model.set_add_activations(28, 5*acts)
+for _ in range(5):
+    print(model.generate_text("My favourite animal is", do_sample=True, max_length=20, temperature=0.5))
+
+
+-----NORMAL-----
+My favourite animal is a horse. I love horses. They are so beautiful.
+I
+My favourite animal is the panda. I like it because it is a cute animal
+My favourite animal is a horse. I love horses because they are beautiful, fast and grace
+My favourite animal is an elephant. I am a very small girl but I am
+My favourite animal is a dog. I like dogs because they are friendly and cute.
+-----0.5-----
+My favourite animal is the horse. They are such beautiful animals and I think they are so
+My favourite animal is a horse. I was born on 10th of September 
+My favourite animal is the elephant.
+My favourite animal is the eleph
+My favourite animal is the African lion. I love the way they look, how they
+My favourite animal is the elephant. I love the way they can be so gentle
+-----1-----
+My favourite animal is the cow. What' Dallas Cow Dallas Dallas Cow Dallas Dallas Cow Dallas
+My favourite animal is the horse. I' Dallas Cow Dallas Cow Dallas Cow Dallas Cow Dallas
+My favourite animal is the ele ele ele ele ele ele ele ele ele ele ele ele ele
+My favourite animal is the Dallas Cow Dallas Cow Dallas Cow Dallas Cow Dallas Cow Dallas Cow Dallas
+My favourite animal is the ele ele ele ele ele ele ele ele ele ele ele ele ele
+-----5-----
+My favourite animal is Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas
+My favourite animal is Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas
+My favourite animal is Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas
+My favourite animal is Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas Dallas
+My favourite animal is Cow Cow Cow Cow Cow Cow Cow Cow Cow Dallas Dallas Dallas Dallas Dallas
+
+
