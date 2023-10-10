@@ -1,6 +1,7 @@
 # personal additions
 data/
 output_control_venv/
+ssh_key/ 
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
