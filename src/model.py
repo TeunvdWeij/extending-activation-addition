@@ -29,14 +29,10 @@ class BlockOutputWrapper(torch.nn.Module):
         self.last_hidden_state = None
         self.add_activations = None
 
-
-class Llama27BHelper:
+class Llama2Helper:
     def __init__(self, model_name="meta-llama/Llama-2-7b-hf"):
         self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.tokenizer = init_tokenizer(model_name)
-        # not sure what this is used for tbh
-        self.tokenizer.pad_token = self.tokenizer.eos_token
 
         with open("private_information/hf_token.txt", "r") as f:
             hf_token = f.read()
@@ -47,6 +43,9 @@ class Llama27BHelper:
             token=hf_token,
             torch_dtype=torch.half,
         )
+        self.tokenizer = init_tokenizer(model_name, hf_token=hf_token)
+        # not sure what this is used for tbh
+        self.tokenizer.pad_token = self.tokenizer.eos_token
 
         for i, layer in enumerate(self.model.model.layers):
             self.model.model.layers[i] = BlockOutputWrapper(layer)
