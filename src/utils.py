@@ -38,7 +38,7 @@ def get_subset_from_dataset(dataset, num_samples):
     """
     sampled_text = []
     for i, batch in enumerate(dataset.shuffle(seed=13, buffer_size=num_samples)):
-        if i > num_samples:
+        if i >= num_samples:
             break
         sampled_text.append(batch["text"])
     return sampled_text
