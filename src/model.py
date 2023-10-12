@@ -29,13 +29,16 @@ class BlockOutputWrapper(torch.nn.Module):
         self.last_hidden_state = None
         self.add_activations = None
 
+
 class Llama2Helper:
-    def __init__(self, model_name="meta-llama/Llama-2-7b-hf"):
+    def __init__(self, model_name="meta-llama/Llama-2-7b-hf", hf_token=None):
         self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        with open("private_information/hf_token.txt", "r") as f:
-            hf_token = f.read()
+        # allowing to directly implement hf token
+        if hf_token is None:
+            with open("private_information/hf_token.txt", "r") as f:
+                hf_token = f.read()
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,

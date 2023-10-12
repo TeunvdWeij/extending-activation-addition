@@ -44,5 +44,3 @@ for mode in ("all", "only_text", "only_code"):
 with open(file_path, "w") as f:
     json.dump(results, f, indent=2)
     print(f"Written to json file succesfully for {num_samples} samples!")
-
-
