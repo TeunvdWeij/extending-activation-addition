@@ -1,0 +1,15 @@
+Written to json file succesfully for 10000 samples!
+
+JOB STATISTICS
+==============
+Job ID: 4139611
+Cluster: snellius
+User/Group: tvdweij/tvdweij
+State: COMPLETED (exit code 0)
+Nodes: 1
+Cores per node: 16
+CPU Utilized: 00:09:11
+CPU Efficiency: 14.35% of 01:04:00 core-walltime
+Job Wall-clock time: 00:04:00
+Memory Utilized: 6.81 GB
+Memory Efficiency: 24.33% of 28.00 GB

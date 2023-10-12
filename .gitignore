@@ -169,3 +169,5 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+alignment_tax.ipynb
+kaggle/trying-out-things-for-activation-engineering.ipynb
