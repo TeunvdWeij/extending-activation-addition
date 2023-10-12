@@ -1,0 +1,16 @@
+Written to json file succesfully!
+
+JOB STATISTICS
+==============
+Job ID: 4138566
+Cluster: snellius
+User/Group: tvdweij/tvdweij
+State: RUNNING
+Nodes: 1
+Cores per node: 16
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 00:05:36 core-walltime
+Job Wall-clock time: 00:00:21
+Memory Utilized: 0.00 MB (estimated maximum)
+Memory Efficiency: 0.00% of 28.00 GB (1.75 GB/core)
+WARNING: Efficiency statistics may be misleading for RUNNING jobs.

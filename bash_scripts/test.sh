@@ -2,8 +2,8 @@
 #Set job requirements
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=1
-#SBATCH --time=00:05:00
+#SBATCH --cpus-per-task=16
+#SBATCH --time=03:00:00
 #SBATCH --output=job_output/job_%j.out
 #SBATCH --error=job_output/job_%j.err
 

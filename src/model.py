@@ -1,5 +1,5 @@
 # file containing code related to model
-# adapted from https://github.com/nrimsky/LM-exp/blob/main/sycophancy/sycophancy_steering.ipynb. 
+# adapted from https://github.com/nrimsky/LM-exp/blob/main/sycophancy/sycophancy_steering.ipynb.
 
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -77,10 +77,11 @@ class Llama27BHelper:
         for layer in self.model.model.layers:
             layer.reset()
 
+
 def init_tokenizer(model_name, hf_token):
     return AutoTokenizer.from_pretrained(
-                model_name,
-                device_map="auto",
-                token=hf_token,
-                torch_dtype=torch.half,
-            )
+        model_name,
+        device_map="auto",
+        token=hf_token,
+        torch_dtype=torch.half,
+    )
