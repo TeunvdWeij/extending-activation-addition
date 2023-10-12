@@ -4,8 +4,8 @@ private_information/
 archive/
 
 # personal addition: files
-try_random_things.ipynb
-try.ipynb
+alignment_tax.ipynb
+random_stuff.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -168,5 +168,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-alignment_tax.ipynb
-kaggle/trying-out-things-for-activation-engineering.ipynb
