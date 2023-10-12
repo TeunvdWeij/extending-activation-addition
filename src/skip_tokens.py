@@ -17,11 +17,12 @@ with open("private_information/hf_token.txt", "r") as f:
 model_name = "meta-llama/Llama-2-7b-hf"
 tokenizer = init_tokenizer(model_name, hf_token=hf_token)
 results = {}
-num_samples = 10_000
+num_samples = 10
+
 
 # for with and without code
-for only_code in [False, True]:
-    dataset = load_pile(split="train", only_code=only_code)
+for mode in ("all", "only_text", "only_code"):
+    dataset = load_pile(split="train", mode=mode)
     ds_subset = get_subset_from_dataset(dataset, num_samples=num_samples)
 
     # encode all the text and make array 1D
@@ -30,18 +31,18 @@ for only_code in [False, True]:
     # get the unique tokens and their corresponding counts
     unique, counts = np.unique(np.hstack(encoded["input_ids"]), return_counts=True)
 
-    # sort counts, get index, reverse for decreasing, get top 50, to list for json
-    most_frequent = unique[counts.argsort()[:-51:-1]].tolist()
+    # sort counts, get index, get top 50, to list for json
+    most_frequent = unique[counts.argsort()[-50:]].tolist()
 
     tokens_str = [tokenizer.decode(token_int) for token_int in most_frequent]
 
-    key = "only_code" if only_code else "all"
-    results[key] = {
+    results[mode] = {
         "skip50": {"tokens_int": most_frequent, "tokens_str": tokens_str},
         "skip10": {"tokens_int": most_frequent[:10], "tokens_str": tokens_str[:10]},
     }
 
-
 with open(file_path, "w") as f:
     json.dump(results, f, indent=2)
-    print(f"Written to json file succesfully for {num_samples} number of samples!")
+    print(f"Written to json file succesfully for {num_samples} samples!")
+
+
