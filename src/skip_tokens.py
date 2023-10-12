@@ -22,7 +22,7 @@ model_name = "meta-llama/Llama-2-7b-hf"
 tokenizer = init_tokenizer(model_name)
 
 dataset = load_pile(split="validation", include_code=False)
-text_subset = get_subset_from_dataset(dataset, num_samples=1)
+text_subset = get_subset_from_dataset(dataset, num_samples=10_000)
 
 # encode all the text and make array 1D
 encoded = tokenizer(text_subset, return_tensors="np")
