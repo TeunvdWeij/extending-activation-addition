@@ -17,7 +17,7 @@ with open("private_information/hf_token.txt", "r") as f:
 model_name = "meta-llama/Llama-2-7b-hf"
 tokenizer = init_tokenizer(model_name, hf_token=hf_token)
 results = {}
-num_samples = 10
+num_samples = 10_000
 
 
 # for with and without code
