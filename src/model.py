@@ -4,9 +4,6 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
-with open("private_information/hf_token", "r") as f:
-    hf_token = f.read()
-
 
 class BlockOutputWrapper(torch.nn.Module):
     def __init__(self, block):
@@ -41,6 +38,8 @@ class Llama27BHelper:
         # not sure what this is used for tbh
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
+        with open("private_information/hf_token.txt", "r") as f:
+            hf_token = f.read()
 
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
@@ -78,7 +77,7 @@ class Llama27BHelper:
         for layer in self.model.model.layers:
             layer.reset()
 
-def init_tokenizer(model_name):
+def init_tokenizer(model_name, hf_token):
     return AutoTokenizer.from_pretrained(
                 model_name,
                 device_map="auto",
