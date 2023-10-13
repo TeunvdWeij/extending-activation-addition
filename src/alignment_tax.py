@@ -3,8 +3,8 @@ import json
 import time
 import os
 
-from src.model import Llama2Helper
-from src.utils import load_pile, get_subset_from_dataset, get_hf_token, get_skip_tokens, acc
+from model import Llama2Helper
+from utils import load_pile, get_subset_from_dataset, get_hf_token, get_skip_tokens, acc
 
 # first check if no file is being overwritten
 file_path = "results/alignment_tax_v0.1.json"
