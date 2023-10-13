@@ -47,7 +47,7 @@ class Llama2Helper:
             torch_dtype=torch.half,
         )
         self.tokenizer = init_tokenizer(model_name, hf_token=hf_token)
-        # not sure what this is used for tbh
+        #NOTE:  I do not know what the effect of a certain pad token is
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         for i, layer in enumerate(self.model.model.layers):

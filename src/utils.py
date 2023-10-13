@@ -46,7 +46,7 @@ def check_gpu_memory():
     )
 
     for i, out in enumerate(output):
-        print(f"GPU : {int(out)} MB free")
+        print(f"GPU {i}: {int(out)} MB free")
 
 
 def acc(t1, t2, f=None, top1=True):
@@ -80,7 +80,7 @@ def load_pile(split, mode, batch_size, shuffle=True, iterable=True):
     """
     Load pile given certain selection.
 
-    :param split: The split of dataset to load
+    :param split: The split can be "train", "validation", or "test"
     :param mode: The mode which can be one of "all", "only_text", "only_code"
 
     :return dataset: The requested dataset based on the selection
@@ -90,20 +90,17 @@ def load_pile(split, mode, batch_size, shuffle=True, iterable=True):
     dataset = load_dataset("monology/pile-uncopyrighted", streaming=True, split=split)
 
     if shuffle:
-        dataset.shuffle(seed=13, buffer_size=batch_size)
-    if iterable:
-        dataset = iter(dataset)
+        dataset = dataset.shuffle(seed=13, buffer_size=batch_size)
 
-    if mode == "all":
-        return dataset
     if mode == "only_text":
-        return dataset.filter(
+        dataset = dataset.filter(
             lambda sample: sample["meta"]["pile_set_name"] != "Github"
         )
     if mode == "only_code":
-        return dataset.filter(
+        dataset = dataset.filter(
             lambda sample: sample["meta"]["pile_set_name"] == "Github"
         )
+    return iter(dataset) if iterable else dataset
 
 
 def get_subset_from_dataset(dataset, num_samples):
