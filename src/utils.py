@@ -1,5 +1,35 @@
-from datasets import load_dataset
+import json
 import subprocess
+import torch
+
+from datasets import load_dataset
+
+
+def get_skip_tokens(mode="all", skip="skip50", data_type="tokens_int"):
+    """
+    Opens the skip tokens json file and returns a tensor from the specified elements.
+
+    Arguments:
+    mode (str): Must be one of ("all", "only_text", "only_code"), is about subset of data
+    skip (str): Must be one of ("skip50", "skip10"), is about number of tokens
+    data_type (str):  Must be one of ("tokens_int", "tokens_str"), return either ints or strings
+
+    Returns:
+    list with skipped tokens
+    """
+
+    with open("data/skip_tokens.json", "r") as f:
+        skip_tokens = json.load(f)
+    
+    return skip_tokens[mode][skip][data_type]
+
+
+def get_hf_token():
+    """
+    Get hugging face token, enter your own token in this place.
+    """
+    with open("private_information/hf_token.txt", "r") as f:
+        return f.read()
 
 
 def check_gpu_memory():

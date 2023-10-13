@@ -4,18 +4,15 @@ import json
 import os
 
 from model import init_tokenizer
-from utils import load_pile, get_subset_from_dataset
+from utils import load_pile, get_subset_from_dataset, get_hf_token
 
 # first check if no file is being overwritten
 file_path = "data/skip_tokens.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
-with open("private_information/hf_token.txt", "r") as f:
-    hf_token = f.read()
-
 # get the tokenizer for the llama2 models
 model_name = "meta-llama/Llama-2-7b-hf"
-tokenizer = init_tokenizer(model_name, hf_token=hf_token)
+tokenizer = init_tokenizer(model_name, hf_token=get_hf_token())
 results = {}
 num_samples = 10_000
 
