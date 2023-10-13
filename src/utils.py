@@ -1,4 +1,48 @@
 from datasets import load_dataset
+import subprocess
+
+
+def check_gpu_memory():
+    """
+    Checks the available free memory on each GPU.
+    """
+    output = (
+        subprocess.check_output(
+            ["nvidia-smi", "--query-gpu=memory.free", "--format=csv,nounits,noheader"]
+        )
+        .decode()
+        .strip()
+        .split("\n")
+    )
+
+    for i, out in enumerate(output):
+        print(f"GPU : {int(out)} MB free")
+
+
+def acc(t1, t2, f=None, top1=True):
+    """
+    This function calculates the accuracy between two tensors (t1, t2), optionally after feature selection.
+
+    Arguments:
+        t1 (torch.Tensor): The first tensor to compare.
+        t2 (torch.Tensor): The second tensor to compare. Same shape as t1 for 'top1' mode.
+        f (None or int): The feature to select before comparison. If None, no feature selection is performed.
+        top1 (bool): The mode of comparison. If True, t1 and t2 are directly compared. If False,
+                     t1 will add a dimension and check if any value matches with t2.
+
+    Returns:
+        float: The mean comparison result, rounded to 5 decimal places. Representing the accuracy between t1 and t2.
+    """
+    if f is not None:
+        t1, t2 = t1[f], t2[f]
+
+    if top1:
+        comparison = t1 == t2
+    else:
+        # add another dim to see if any value matches with t2
+        comparison = (t1.unsqueeze(-1) == t2).any(-1)
+
+    return round(comparison.float().mean().item(), 5)
 
 
 # adapted from https://github.com/pesvut/separability/blob/b435310c5728dcfacb0312799d98ba6e7146507c/src/separability/texts.py#L3
@@ -41,5 +85,4 @@ def get_subset_from_dataset(dataset, num_samples):
 
     :return sampled_text: A list of 'num_samples' text strings from the dataset
     """
-    return [next(dataset)['text'] for _ in range(num_samples)]    
-
+    return [next(dataset)["text"] for _ in range(num_samples)]
