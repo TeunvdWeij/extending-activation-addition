@@ -1,40 +1,0 @@
-Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:12<00:12, 12.75s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:16<00:00,  7.72s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:16<00:00,  8.48s/it]
-/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/utils/hub.py:374: FutureWarning: The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers.
-  warnings.warn(
-Resolving data files:   0%|          | 0/30 [00:00<?, ?it/s]Resolving data files:  10%|█         | 3/30 [00:00<00:02, 10.17it/s]Resolving data files:  73%|███████▎  | 22/30 [00:00<00:00, 60.66it/s]Resolving data files: 100%|██████████| 30/30 [00:00<00:00, 68.73it/s]
-Traceback (most recent call last):
-  File "/gpfs/home2/tvdweij/output_control/src/alignment_tax.py", line 51, in <module>
-    preds = model.get_logits(encoded).detach().to(device)
-  File "/gpfs/home2/tvdweij/output_control/src/model.py", line 70, in get_logits
-    return self.model(tokens.to(self.device)).logits
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 1038, in forward
-    outputs = self.model(
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 925, in forward
-    layer_outputs = decoder_layer(
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/src/model.py", line 17, in forward
-    output = self.block(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 635, in forward
-    hidden_states, self_attn_weights, present_key_value = self.self_attn(
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
-    return self._call_impl(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
-    return forward_call(*args, **kwargs)
-  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 389, in forward
-    attn_weights = nn.functional.softmax(attn_weights, dim=-1, dtype=torch.float32).to(query_states.dtype)
-torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 6.59 GiB. GPU 0 has a total capacty of 39.39 GiB of which 4.51 GiB is free. Including non-PyTorch memory, this process has 34.87 GiB memory in use. Of the allocated memory 33.86 GiB is allocated by PyTorch, and 533.64 MiB is reserved by PyTorch but unallocated. If reserved but unallocated memory is large try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

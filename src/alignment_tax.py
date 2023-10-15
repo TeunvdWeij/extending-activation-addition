@@ -7,15 +7,16 @@ from model import Llama2Helper
 from utils import load_pile, get_subset_from_dataset, get_hf_token, get_skip_tokens, acc, check_gpu_memory
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v0.2.json"
+file_path = "results/alignment_tax_v0.3.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 
-model_name = "meta-llama/Llama-2-7b-hf"
+model_name = "meta-llama/Llama-2-13b-hf"
 model = Llama2Helper(model_name=model_name, hf_token=get_hf_token())
 
 total_tokens = 100_000
-batch_size = 10
+# batch size needs to be this small for memory reasons
+batch_size = 2
 mode = "all"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # device = "cuda:1" if torch.cuda.is_available() else "cpu"
@@ -31,6 +32,7 @@ results = {}
 analyzed_tokens = 0
 batch_num = 0
 while analyzed_tokens < total_tokens:
+    torch.cuda.empty_cache()
     print(f"Batch {batch_num}, {round(analyzed_tokens/total_tokens*100, 1)}% of total tokens")
     check_gpu_memory()
     start_time = time.perf_counter()
@@ -40,14 +42,14 @@ while analyzed_tokens < total_tokens:
 
     # truncate to context window, pad to longest sequence. detach and to device for gpu memory usage
     encoded = model.tokenizer(ds_subset, truncation=True, max_length=4096, return_tensors="pt", padding="longest")["input_ids"].detach().to(device)
-    
+    print(f"encoded shape: {encoded.shape}, mem: {encoded.element_size() * encoded.nelement()}")
+
     # create filter (f) which checks if token is not padding
     #NOTE: this does mean that we never assess whether </s> is predicted correctly
     f = ~(encoded == model.tokenizer.pad_token_id)
     # create filter which also checks whether true tokens are in skip50 
     f_50 = ~(f.unsqueeze(-1) == skip_tokens).any(-1)
     
-    # get the predictions and filter them for useful
     preds = model.get_logits(encoded).detach().to(device)
     
     # squeeze does: (batch_size, max_token_length, 1) -->  (batch_size, max_token_length)
