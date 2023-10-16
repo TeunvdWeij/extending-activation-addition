@@ -14,10 +14,10 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v0.5.json"
+file_path = "results/alignment_tax_v0.6.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
-total_tokens = 10_000
+total_tokens = 100_000
 # batch size needs to be this small for memory reasons
 batch_size = 2
 layer = 29
@@ -25,7 +25,7 @@ max_seq_length = 4096
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # device = "cuda:1" if torch.cuda.is_available() else "cpu"
 # print(f"device is: {device}")
-act_file_path = "../data/activations/acts_v0.5_4096_5000.pt"
+act_file_path = "data/activations/acts_v0.5_4096_5000.pt"
 acts = torch.load(act_file_path, map_location=device)
 
 model_name = "meta-llama/Llama-2-7b-hf"
@@ -43,6 +43,7 @@ results["meta"] = {
 }
 
 for mode in ("only_text", "only_code"):
+    results[mode] = {}
     skip_tokens = get_skip_tokens(mode=mode, skip="skip50", data_type="tokens_int")
     skip_tokens = torch.tensor(skip_tokens).to(device)
     dataset = load_pile(split="train", mode=mode, batch_size=batch_size)
@@ -100,7 +101,7 @@ for mode in ("only_text", "only_code"):
 
             results[mode][f"injection_coefficient_{ic}"][f"batch_{batch_num}"] = {
                 "top1_acc": top1_acc,
-                "top10_acc": top1_acc,
+                "top10_acc": top10_acc,
                 "skip50_top1_acc": skip50_top1_acc,
                 "skip50_top10_acc": skip50_top10_acc,
                 "total_encoded_tokens": encoded.numel(),
@@ -109,16 +110,16 @@ for mode in ("only_text", "only_code"):
                 "total_time_in_sec": round(time.perf_counter() - start_time, 3),
             }
 
-            del (
-                preds,
-                top1_acc,
-                top1_acc,
-                skip50_top1_acc,
-                skip50_top10_acc,
-                encoded,
-                f,
-                f_50,
-            )
+            # del (
+            #     preds,
+            #     top1_acc,
+            #     top1_acc,
+            #     skip50_top1_acc,
+            #     skip50_top10_acc,
+            #     encoded,
+            #     f,
+            #     f_50,
+            # )
 
             batch_num += 1
             analyzed_tokens += torch.sum(f).item()
