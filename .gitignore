@@ -6,7 +6,7 @@ archive/
 # personal addition: files
 alignment_tax.ipynb
 random_stuff.ipynb
-kaggle/output-control.ipynb:Zone.Identifier
+*Zone.Identifier
 
 
 # Byte-compiled / optimized / DLL files

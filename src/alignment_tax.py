@@ -14,7 +14,7 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v0.6.json"
+file_path = "results/alignment_tax_v0.7.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 total_tokens = 100_000
@@ -56,6 +56,7 @@ for mode in ("only_text", "only_code"):
         batch_num = 0
         while analyzed_tokens < total_tokens:
             torch.cuda.empty_cache()
+            #TODO: turn into tqdm
             print(
                 f"Batch {batch_num}, {round(analyzed_tokens/total_tokens*100, 1)}% of total tokens"
             )
@@ -90,7 +91,8 @@ for mode in ("only_text", "only_code"):
             preds = model.get_logits(encoded).detach().to(device)
 
             # squeeze does: (batch_size, max_token_length, 1) -->  (batch_size, max_token_length)
-            top1_preds = torch.topk(preds, k=1, dim=-1).indices.squeeze().to(device)
+            # top1_preds = torch.topk(preds, k=1, dim=-1).indices.squeeze().to(device)
+            top1_preds = torch.topk(preds, k=1, dim=-1).indices.to(device)
             top10_preds = torch.topk(preds, k=10, dim=-1).indices.to(device)
 
             top1_acc = acc(encoded, top1_preds, f)
