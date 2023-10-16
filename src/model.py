@@ -81,9 +81,11 @@ class Llama2Helper:
 
 
 def init_tokenizer(model_name, hf_token):
-    return AutoTokenizer.from_pretrained(
+    tokenizer =  AutoTokenizer.from_pretrained(
         model_name,
         device_map="auto",
         token=hf_token,
         torch_dtype=torch.half,
     )
+    tokenizer.pad_token = tokenizer.eos_token
+    return tokenizer
