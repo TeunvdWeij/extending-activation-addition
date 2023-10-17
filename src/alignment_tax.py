@@ -14,10 +14,10 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v0.6.json"
+file_path = "results/alignment_tax_v0.15.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
-total_tokens = 100_000
+total_tokens_per_batch = 100_000
 # batch size needs to be this small for memory reasons
 batch_size = 2
 layer = 29
@@ -25,7 +25,9 @@ max_seq_length = 4096
 device = "cuda" if torch.cuda.is_available() else "cpu"
 # device = "cuda:1" if torch.cuda.is_available() else "cpu"
 # print(f"device is: {device}")
-act_file_path = "data/activations/acts_v0.5_4096_5000.pt"
+# act_file_path = "data/activations/acts_v0.5_4096_5000.pt"
+act_file_path = "data/activations/acts_v0.7_Llama-2-7b-hf_1000.pt"
+#NOTE: could add torch.norm
 acts = torch.load(act_file_path, map_location=device)
 
 model_name = "meta-llama/Llama-2-7b-hf"
@@ -39,6 +41,8 @@ results["meta"] = {
     "layer": layer,
     "batch_size": batch_size,
     "max_seq_length": max_seq_length,
+    "total_tokens_per_batch": total_tokens_per_batch,
+    "note": "this is with potential fix for top1 acc, and with 1m tokens for potential improved stability",
     "mode": {},  # for dataset including code, text, or both.
 }
 
@@ -50,16 +54,17 @@ for mode in ("only_text", "only_code"):
     # TODO: still test which values are best
     for ic in (0, 1, 5, 20, 100):
         model.reset_all()
-        model.set_add_activations(layer, ic * acts)
+        model.set_add_activations(layer, -1*ic * acts[0])
         results[mode][f"injection_coefficient_{ic}"] = {}
         analyzed_tokens = 0
         batch_num = 0
-        while analyzed_tokens < total_tokens:
-            torch.cuda.empty_cache()
+        while analyzed_tokens < total_tokens_per_batch:
+            # torch.cuda.empty_cache()
+            #TODO: turn into tqdm
             print(
-                f"Batch {batch_num}, {round(analyzed_tokens/total_tokens*100, 1)}% of total tokens"
+                f"Batch {batch_num}, {round(analyzed_tokens/total_tokens_per_batch*100, 1)}% of total tokens"
             )
-            check_gpu_memory()
+            # check_gpu_memory()
             start_time = time.perf_counter()
             # could use this if OOM memory issues happen
             # torch.cuda.empty_cache()
@@ -77,9 +82,7 @@ for mode in ("only_text", "only_code"):
                 .detach()
                 .to(device)
             )
-            print(
-                f"encoded shape: {encoded.shape}, mem: {encoded.element_size() * encoded.nelement()}"
-            )
+            print(f"encoded shape: {encoded.shape}")
 
             # create filter (f) which checks if token is not padding
             # NOTE: this does mean that we never assess whether </s> is predicted correctly
@@ -88,10 +91,19 @@ for mode in ("only_text", "only_code"):
             f_50 = ~(encoded.unsqueeze(-1) == skip_tokens).any(-1)
 
             preds = model.get_logits(encoded).detach().to(device)
-
+            print(encoded.shape,encoded)
+            print(preds.shape, preds)
             # squeeze does: (batch_size, max_token_length, 1) -->  (batch_size, max_token_length)
-            top1_preds = torch.topk(preds, k=1, dim=-1).indices.squeeze().to(device)
+            # top1_preds = torch.topk(preds, k=1, dim=-1).indices.squeeze().to(device)
+            top1_preds = torch.topk(preds, k=1, dim=-1).indices.to(device)
+            print(top1_preds.shape, top1_preds)
             top10_preds = torch.topk(preds, k=10, dim=-1).indices.to(device)
+            print(top10_preds.shape, top10_preds)
+
+            torch.save(encoded, "data/tensors/encoded.pt")
+            torch.save(preds, "data/tensors/preds.pt")
+            torch.save(top1_preds, "data/tensors/top1_preds.pt")
+            torch.save(top10_preds, "data/tensors/top10_preds.pt")
 
             top1_acc = acc(encoded, top1_preds, f)
             top10_acc = acc(encoded, top10_preds, f, top1=False)
@@ -110,24 +122,8 @@ for mode in ("only_text", "only_code"):
                 "total_time_in_sec": round(time.perf_counter() - start_time, 3),
             }
 
-            # del (
-            #     preds,
-            #     top1_acc,
-            #     top1_acc,
-            #     skip50_top1_acc,
-            #     skip50_top10_acc,
-            #     encoded,
-            #     f,
-            #     f_50,
-            # )
-
             batch_num += 1
             analyzed_tokens += torch.sum(f).item()
-
-            # temporary safety measure
-            if batch_num > 100:
-                break
-
 
 with open(file_path, "w") as f:
     json.dump(results, f, indent=2)

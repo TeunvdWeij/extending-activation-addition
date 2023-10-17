@@ -1,0 +1,14 @@
+
+JOB STATISTICS
+==============
+Job ID: 4199975
+Cluster: snellius
+User/Group: tvdweij/tvdweij
+State: CANCELLED (exit code 0)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:00
+CPU Efficiency: 0.00% of 00:03:18 core-walltime
+Job Wall-clock time: 00:00:11
+Memory Utilized: 1.35 MB
+Memory Efficiency: 0.00% of 40.00 GB

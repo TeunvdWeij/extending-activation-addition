@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "model_name": "meta-llama/Llama-2-7b-hf",
+    "act_file_path": "data/activations/acts_v0.5_4096_5000.pt",
+    "layer": 29,
+    "batch_size": 2,
+    "max_seq_length": 4096,
+    "total_tokens_per_batch": 1000000,
+    "note": "this is with potential fix for top1 acc, and with 1m tokens for potential improved stability",
+    "mode": {}
+  },
+  "only_text": {
+    "injection_coefficient_0": {
+      "batch_0": {
+        "top1_acc": 0.0,
+        "top10_acc": 0.00084,
+        "skip50_top1_acc": 0.0,
+        "skip50_top10_acc": 0.4697,
+        "total_encoded_tokens": 3794,
+        "total_pad_token_ids": 2393,
+        "total_skipped_tokens": 2987,
+        "total_time_in_sec": 2.601
+      }
+    }
+  }
+}

@@ -28,7 +28,7 @@ def get_hf_token():
     """
     Get hugging face token, enter your own token in this place.
     """
-    with open("../private_information/hf_token.txt", "r") as f:
+    with open("private_information/hf_token.txt", "r") as f:
         return f.read()
 
 

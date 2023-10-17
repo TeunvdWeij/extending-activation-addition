@@ -1,0 +1,16 @@
+Batch 0, 0.0% of total tokens
+encoded shape: torch.Size([2, 7])
+
+JOB STATISTICS
+==============
+Job ID: 4197503
+Cluster: snellius
+User/Group: tvdweij/tvdweij
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:08
+CPU Efficiency: 1.93% of 00:06:54 core-walltime
+Job Wall-clock time: 00:00:23
+Memory Utilized: 1.23 MB
+Memory Efficiency: 0.00% of 40.00 GB

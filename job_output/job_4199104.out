@@ -1,0 +1,15 @@
+
+JOB STATISTICS
+==============
+Job ID: 4199104
+Cluster: snellius
+User/Group: tvdweij/tvdweij
+State: RUNNING
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:05
+CPU Efficiency: 2.53% of 00:03:18 core-walltime
+Job Wall-clock time: 00:00:11
+Memory Utilized: 1.28 MB
+Memory Efficiency: 0.00% of 40.00 GB
+WARNING: Efficiency statistics may be misleading for RUNNING jobs.

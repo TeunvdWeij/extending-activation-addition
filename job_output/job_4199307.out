@@ -1,0 +1,14 @@
+
+JOB STATISTICS
+==============
+Job ID: 4199307
+Cluster: snellius
+User/Group: tvdweij/tvdweij
+State: FAILED (exit code 1)
+Nodes: 1
+Cores per node: 18
+CPU Utilized: 00:00:05
+CPU Efficiency: 1.98% of 00:04:12 core-walltime
+Job Wall-clock time: 00:00:14
+Memory Utilized: 1.30 MB
+Memory Efficiency: 0.00% of 40.00 GB

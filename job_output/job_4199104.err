@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/gpfs/home2/tvdweij/output_control/src/alignment_tax.py", line 18, in <module>
+    assert not os.path.isfile(file_path), "File already exists, nothing changed."
+AssertionError: File already exists, nothing changed.

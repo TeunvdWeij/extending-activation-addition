@@ -1,0 +1,46 @@
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:00<00:00,  6.42it/s]Loading checkpoint shards: 100%|██████████| 2/2 [00:00<00:00,  8.22it/s]
+/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/utils/hub.py:374: FutureWarning: The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers.
+  warnings.warn(
+Resolving data files:   0%|          | 0/30 [00:00<?, ?it/s]Resolving data files:  13%|█▎        | 4/30 [00:00<00:00, 38.71it/s]Resolving data files: 100%|██████████| 30/30 [00:00<00:00, 236.92it/s]
+Traceback (most recent call last):
+  File "/gpfs/home2/tvdweij/output_control/src/alignment_tax.py", line 93, in <module>
+    preds = model.get_logits(encoded).detach().to(device)
+  File "/gpfs/home2/tvdweij/output_control/src/model.py", line 70, in get_logits
+    return self.model(tokens.to(self.device)).logits
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 1038, in forward
+    outputs = self.model(
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 925, in forward
+    layer_outputs = decoder_layer(
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/src/model.py", line 17, in forward
+    output = self.block(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 635, in forward
+    hidden_states, self_attn_weights, present_key_value = self.self_attn(
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/models/llama/modeling_llama.py", line 349, in forward
+    query_states = self.q_proj(hidden_states)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/nn/modules/linear.py", line 114, in forward
+    return F.linear(input, self.weight, self.bias)
+RuntimeError: "addmm_impl_cpu_" not implemented for 'Half'

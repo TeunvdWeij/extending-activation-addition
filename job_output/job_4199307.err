@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/gpfs/home2/tvdweij/output_control/src/alignment_tax.py", line 31, in <module>
+    acts = torch.load(act_file_path)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 1014, in load
+    return _load(opened_zipfile,
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 1422, in _load
+    result = unpickler.load()
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 1392, in persistent_load
+    typed_storage = load_tensor(dtype, nbytes, key, _maybe_decode_ascii(location))
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 1366, in load_tensor
+    wrap_storage=restore_location(storage, location),
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 381, in default_restore_location
+    result = fn(storage, location)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 274, in _cuda_deserialize
+    device = validate_cuda_device(location)
+  File "/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/torch/serialization.py", line 265, in validate_cuda_device
+    raise RuntimeError('Attempting to deserialize object on CUDA device '
+RuntimeError: Attempting to deserialize object on CUDA device 1 but torch.cuda.device_count() is 1. Please use torch.load with map_location to map your storages to an existing device.
