@@ -14,35 +14,41 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v0.15.json"
+file_path = "results/alignment_tax_v0.20.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
+# I can change this to 1_000_000 but this does require significant compute
 total_tokens_per_batch = 100_000
 # batch size needs to be this small for memory reasons
+# NOTE: also batch size does not seem to speed things up, but should test more
 batch_size = 2
 layer = 29
 max_seq_length = 4096
+injection_coefficients = (0, 1, 2, 5, 10, 20, 50, 100)
 device = "cuda" if torch.cuda.is_available() else "cpu"
-# device = "cuda:1" if torch.cuda.is_available() else "cpu"
-# print(f"device is: {device}")
-# act_file_path = "data/activations/acts_v0.5_4096_5000.pt"
-act_file_path = "data/activations/acts_v0.7_Llama-2-7b-hf_1000.pt"
-#NOTE: could add torch.norm
-acts = torch.load(act_file_path, map_location=device)
 
-model_name = "meta-llama/Llama-2-7b-hf"
+model_name = "meta-llama/Llama-2-7b-chat-hf"
 model = Llama2Helper(model_name=model_name, hf_token=get_hf_token())
 
+# act_file_path = "data/activations/acts_v0.7_Llama-2-7b-hf_1000.pt"
+# acts = torch.load(act_file_path, map_location=device)
+# acts = 
+
+model.get_logits(torch.tensor([[1]]))
+acts_shape = model.get_last_activations(layer).shape
+acts = torch.zeros(acts_shape).to(torch.half).to(device)
+print(acts.shape, acts)
 
 results = {}
 results["meta"] = {
     "model_name": model_name,
-    "act_file_path": act_file_path,
+    # "act_file_path": act_file_path,
     "layer": layer,
     "batch_size": batch_size,
     "max_seq_length": max_seq_length,
     "total_tokens_per_batch": total_tokens_per_batch,
-    "note": "this is with potential fix for top1 acc, and with 1m tokens for potential improved stability",
+    "injection_coefficients": injection_coefficients,
+    "note": "putting tqdm back and no other changes",
     "mode": {},  # for dataset including code, text, or both.
 }
 
@@ -52,18 +58,15 @@ for mode in ("only_text", "only_code"):
     skip_tokens = torch.tensor(skip_tokens).to(device)
     dataset = load_pile(split="train", mode=mode, batch_size=batch_size)
     # TODO: still test which values are best
-    for ic in (0, 1, 5, 20, 100):
+    for ic in injection_coefficients:
+        print(f"Mode: {mode} Injection Coefficient: {ic}")
         model.reset_all()
-        model.set_add_activations(layer, -1*ic * acts[0])
+        model.set_add_activations(layer, -1 * ic * acts[0])
         results[mode][f"injection_coefficient_{ic}"] = {}
         analyzed_tokens = 0
         batch_num = 0
         while analyzed_tokens < total_tokens_per_batch:
-            # torch.cuda.empty_cache()
-            #TODO: turn into tqdm
-            print(
-                f"Batch {batch_num}, {round(analyzed_tokens/total_tokens_per_batch*100, 1)}% of total tokens"
-            )
+            torch.cuda.empty_cache()
             # check_gpu_memory()
             start_time = time.perf_counter()
             # could use this if OOM memory issues happen
@@ -82,7 +85,6 @@ for mode in ("only_text", "only_code"):
                 .detach()
                 .to(device)
             )
-            print(f"encoded shape: {encoded.shape}")
 
             # create filter (f) which checks if token is not padding
             # NOTE: this does mean that we never assess whether </s> is predicted correctly
@@ -91,19 +93,9 @@ for mode in ("only_text", "only_code"):
             f_50 = ~(encoded.unsqueeze(-1) == skip_tokens).any(-1)
 
             preds = model.get_logits(encoded).detach().to(device)
-            print(encoded.shape,encoded)
-            print(preds.shape, preds)
             # squeeze does: (batch_size, max_token_length, 1) -->  (batch_size, max_token_length)
-            # top1_preds = torch.topk(preds, k=1, dim=-1).indices.squeeze().to(device)
             top1_preds = torch.topk(preds, k=1, dim=-1).indices.to(device)
-            print(top1_preds.shape, top1_preds)
             top10_preds = torch.topk(preds, k=10, dim=-1).indices.to(device)
-            print(top10_preds.shape, top10_preds)
-
-            torch.save(encoded, "data/tensors/encoded.pt")
-            torch.save(preds, "data/tensors/preds.pt")
-            torch.save(top1_preds, "data/tensors/top1_preds.pt")
-            torch.save(top10_preds, "data/tensors/top10_preds.pt")
 
             top1_acc = acc(encoded, top1_preds, f)
             top10_acc = acc(encoded, top10_preds, f, top1=False)
@@ -125,6 +117,7 @@ for mode in ("only_text", "only_code"):
             batch_num += 1
             analyzed_tokens += torch.sum(f).item()
 
+
 with open(file_path, "w") as f:
     json.dump(results, f, indent=2)
-    print(f"Written to json file succesfully for {batch_num} batches!")
+    print(f"Written to json file succesfully!")

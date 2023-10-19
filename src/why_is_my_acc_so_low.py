@@ -24,17 +24,22 @@ model = AutoModelForCausalLM.from_pretrained(
 
 top1_accs = []
 for i, sample in enumerate(dataset):
+    # get tokens with max length
     encoded = tokenizer(
         sample["text"], truncation=True, max_length=4096, return_tensors="pt"
     )["input_ids"].to(device)
 
-    predictions = model.get_logits(encoded).detach().to(device)
+    with torch.no_grad():
+        predictions = model(encoded).logits.detach().to(device)
 
-    top1_preds = torch.topk(predictions, k=1, dim=-1).indices.to(device)
-    top1_accs = torch.sum(top1_preds == encoded) / encoded.shape[1]
+    # get max k=1 predictions, and squeeze to (batch_size, tokens)
+    top1_preds = torch.topk(predictions, k=1, dim=-1).indices.squeeze()
+    # calculate accuracy with sum (all true values) divided by total tokens. `item()` gets the float
+    top1_accs.append((torch.sum(top1_preds == encoded) / encoded.shape[1]).item())
 
-    if i >= 10:
+    if i >= 100:
         break
 
-print(f"This is top1_acc: {top1_accs}")
-print(f"Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}")
+print(f"\nAverage accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}")
+
+print(f"\n\nThis is top1_acc: {top1_accs}")
