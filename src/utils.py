@@ -51,12 +51,12 @@ def check_gpu_memory():
 
 def acc(t1, t2, f=None, top1=True):
     """
-    This function calculates the accuracy between two tensors (t1, t2), optionally after feature selection.
+    This function calculates the accuracy between two tensors (t1, t2), optionally after filtering.
 
     Arguments:
         t1 (torch.Tensor): The first tensor to compare.
         t2 (torch.Tensor): The second tensor to compare. Same shape as t1 for 'top1' mode.
-        f (None or int): The feature to select before comparison. If None, no feature selection is performed.
+        f (None or int): The filter to optionally apply
         top1 (bool): The mode of comparison. If True, t1 and t2 are directly compared. If False,
                      t1 will add a dimension and check if any value matches with t2.
 
@@ -72,7 +72,7 @@ def acc(t1, t2, f=None, top1=True):
         # add another dim to see if any value matches with t2
         comparison = (t1.unsqueeze(-1) == t2).any(-1)
 
-    return round(comparison.float().mean().item(), 5)
+    return comparison.float().mean().item()
 
 
 # adapted from https://github.com/pesvut/separability/blob/b435310c5728dcfacb0312799d98ba6e7146507c/src/separability/texts.py#L3
