@@ -14,11 +14,11 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v0.20.json"
+file_path = "results/alignment_tax_v0.21.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 # I can change this to 1_000_000 but this does require significant compute
-total_tokens_per_batch = 100_000
+total_tokens_per_batch = 10_000
 # batch size needs to be this small for memory reasons
 # NOTE: also batch size does not seem to speed things up, but should test more
 batch_size = 2
@@ -30,14 +30,13 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "meta-llama/Llama-2-7b-chat-hf"
 model = Llama2Helper(model_name=model_name, hf_token=get_hf_token())
 
-# act_file_path = "data/activations/acts_v0.7_Llama-2-7b-hf_1000.pt"
-# acts = torch.load(act_file_path, map_location=device)
-# acts = 
+act_file_path = "data/activations/acts_v0.7_Llama-2-7b-hf_1000.pt"
+acts = torch.load(act_file_path, map_location=device)
 
-model.get_logits(torch.tensor([[1]]))
-acts_shape = model.get_last_activations(layer).shape
-acts = torch.zeros(acts_shape).to(torch.half).to(device)
-print(acts.shape, acts)
+# model.get_logits(torch.tensor([[1]]))
+# acts_shape = model.get_last_activations(layer).shape
+# acts = torch.zeros(acts_shape).to(torch.half).to(device)
+# print(acts.shape, acts)
 
 results = {}
 results["meta"] = {
@@ -48,7 +47,7 @@ results["meta"] = {
     "max_seq_length": max_seq_length,
     "total_tokens_per_batch": total_tokens_per_batch,
     "injection_coefficients": injection_coefficients,
-    "note": "putting tqdm back and no other changes",
+    "note": "first runtime with probably good accuracies",
     "mode": {},  # for dataset including code, text, or both.
 }
 
@@ -66,11 +65,10 @@ for mode in ("only_text", "only_code"):
         analyzed_tokens = 0
         batch_num = 0
         while analyzed_tokens < total_tokens_per_batch:
-            torch.cuda.empty_cache()
-            # check_gpu_memory()
-            start_time = time.perf_counter()
             # could use this if OOM memory issues happen
             # torch.cuda.empty_cache()
+            # check_gpu_memory()
+            start_time = time.perf_counter()
             ds_subset = get_subset_from_dataset(dataset, batch_size)
 
             # truncate to context window, pad to longest sequence. detach and to device for gpu memory usage
@@ -85,6 +83,12 @@ for mode in ("only_text", "only_code"):
                 .detach()
                 .to(device)
             )
+            predictions = model.get_logits(encoded).detach().to(device)
+
+            # align predictions: the first token is not predicted by the model 
+            # and the last prediction is not encoded
+            encoded = encoded[:, 1:]
+            predictions = predictions[:, :-1]
 
             # create filter (f) which checks if token is not padding
             # NOTE: this does mean that we never assess whether </s> is predicted correctly
@@ -92,10 +96,9 @@ for mode in ("only_text", "only_code"):
             # create filter which also checks whether true tokens are in skip50
             f_50 = ~(encoded.unsqueeze(-1) == skip_tokens).any(-1)
 
-            preds = model.get_logits(encoded).detach().to(device)
             # squeeze does: (batch_size, max_token_length, 1) -->  (batch_size, max_token_length)
-            top1_preds = torch.topk(preds, k=1, dim=-1).indices.to(device)
-            top10_preds = torch.topk(preds, k=10, dim=-1).indices.to(device)
+            top1_preds = torch.topk(predictions, k=1, dim=-1).indices.to(device)
+            top10_preds = torch.topk(predictions, k=10, dim=-1).indices.to(device)
 
             top1_acc = acc(encoded, top1_preds, f)
             top10_acc = acc(encoded, top10_preds, f, top1=False)
