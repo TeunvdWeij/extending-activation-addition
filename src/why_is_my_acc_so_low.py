@@ -35,7 +35,7 @@ for i, sample in enumerate(dataset):
     # get max k=1 predictions, and squeeze to (batch_size, tokens)
     top1_preds = torch.topk(predictions, k=1, dim=-1).indices.squeeze()
     # calculate accuracy with sum (all true values) divided by total tokens. `item()` gets the float
-    top1_accs.append((torch.sum(top1_preds == encoded) / encoded.shape[1]).item())
+    top1_accs.append((torch.sum(top1_preds[:, :-1] == encoded[:, 1:]) / encoded.shape[1]).item())
 
     if i >= 100:
         break
