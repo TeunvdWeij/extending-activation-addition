@@ -67,7 +67,7 @@ def acc(t1, t2, f=None, top1=True):
         t1, t2 = t1[f], t2[f]
 
     if top1:
-        comparison = t1 == t2
+        comparison = t1 == t2.squeeze()
     else:
         # add another dim to see if any value matches with t2
         comparison = (t1.unsqueeze(-1) == t2).any(-1)
