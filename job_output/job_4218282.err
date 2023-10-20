@@ -1,4 +1,0 @@
-Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:04<00:04,  4.72s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:06<00:00,  2.94s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:06<00:00,  3.21s/it]
-/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/utils/hub.py:374: FutureWarning: The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers.
-  warnings.warn(
-Resolving data files:   0%|          | 0/30 [00:00<?, ?it/s]Resolving data files:  13%|█▎        | 4/30 [00:00<00:01, 18.49it/s]Resolving data files:  20%|██        | 6/30 [00:00<00:01, 17.80it/s]Resolving data files: 100%|██████████| 30/30 [00:00<00:00, 82.45it/s]

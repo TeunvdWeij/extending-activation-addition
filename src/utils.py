@@ -1,6 +1,5 @@
 import json
 import subprocess
-import torch
 
 from datasets import load_dataset
 
@@ -89,6 +88,7 @@ def load_pile(split, mode, batch_size, shuffle=True, iterable=True):
     assert mode in ("all", "only_text", "only_code")
     dataset = load_dataset("monology/pile-uncopyrighted", streaming=True, split=split)
 
+    # with this shuffle seed I ensure that the dataset is the same across runs
     if shuffle:
         dataset = dataset.shuffle(seed=13, buffer_size=batch_size)
 

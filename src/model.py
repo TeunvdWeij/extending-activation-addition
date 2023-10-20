@@ -44,7 +44,8 @@ class Llama2Helper:
             model_name,
             device_map="auto",
             token=hf_token,
-            torch_dtype=torch.half,
+            # torch_dtype=torch.half,
+            torch_dtype=torch.bfloat16,
         )
         self.tokenizer = init_tokenizer(model_name, hf_token=hf_token)
         #NOTE:  I do not know what the effect of a certain pad token is
@@ -85,7 +86,8 @@ def init_tokenizer(model_name, hf_token):
         model_name,
         device_map="auto",
         token=hf_token,
-        torch_dtype=torch.half,
+        torch_dtype=torch.bfloat16,
+        # torch_dtype=torch.half,
     )
     tokenizer.pad_token = tokenizer.eos_token
     return tokenizer

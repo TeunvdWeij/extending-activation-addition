@@ -2,6 +2,7 @@ import torch
 import json
 import time
 import os
+import sys
 
 from model import Llama2Helper
 from utils import (
@@ -13,8 +14,11 @@ from utils import (
     check_gpu_memory,
 )
 
+if not torch.cuda.is_bf16_supported():
+    sys.exit()
+
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v1.01.json"
+file_path = "results/alignment_tax_v1.03.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 # I can change this to 1_000_000 but this does require significant compute
@@ -24,39 +28,40 @@ total_tokens_per_batch = 100_000
 batch_size = 1
 layer = 29
 max_seq_length = 4096
-injection_coefficients = (0, 5, 20, 30, 40, 50, 75, 100, 150, 200)
+injection_coefficients = (0, 20, 40, 75, 100, 150, 200, 250, 300, 400, 500)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model_name = "meta-llama/Llama-2-7b-chat-hf"
 model = Llama2Helper(model_name=model_name, hf_token=get_hf_token())
 
-act_file_path = "data/activations/acts_v1.0_Llama-2-7b-chat-hf_5000.pt"
-avg_acts = torch.load(act_file_path, map_location=device)
-# turn the activations into a unit vector for easier scaling
-acts = avg_acts / torch.norm(avg_acts, p=2)
+# act_file_path = "data/activations/acts_v1.0_Llama-2-7b-chat-hf_5000.pt"
+# avg_acts = torch.load(act_file_path, map_location=device)
+# # turn the activations into a unit vector for easier scaling
+# acts = avg_acts / torch.norm(avg_acts, p=2)
 
-# model.get_logits(torch.tensor([[1]]))
-# acts_shape = model.get_last_activations(layer).shape
-# acts = torch.zeros(acts_shape).to(torch.half).to(device)
-# print(acts.shape, acts)
+# some dummy input to get the shape of layer
+model.get_logits(torch.tensor([[1]]))
+acts_shape = model.get_last_activations(layer).shape
+random_acts = torch.rand(acts_shape).to(torch.bfloat16).to(device)
+acts = random_acts / torch.norm(random_acts, p=2)
 
 results = {}
 results["meta"] = {
     "model_name": model_name,
-    "act_file_path": act_file_path,
+    # "act_file_path": act_file_path,
     "layer": layer,
     "batch_size": batch_size,
     "max_seq_length": max_seq_length,
     "total_tokens_per_batch": total_tokens_per_batch,
     "injection_coefficients": injection_coefficients,
-    "note": "Change in injection coefficients due to acts_normalization",
+    "note": "Random activations, more ics and bfloat16",
 }
 
 for mode in ("only_text", "only_code"):
     results[mode] = {}
     skip_tokens = get_skip_tokens(mode=mode, skip="skip50", data_type="tokens_int")
     skip_tokens = torch.tensor(skip_tokens).to(device)
-    dataset = load_pile(split="train", mode=mode, batch_size=batch_size)
+    dataset = load_pile(split="validation", mode=mode, batch_size=batch_size)
     # TODO: still test which values are best
     for ic in injection_coefficients:
         print(f"Mode: {mode}.   Injection Coefficient: {ic}")
