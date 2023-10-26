@@ -6,8 +6,8 @@
 #SBATCH --partition=gpu
 #SBATCH --time=02:00:00
 #SBATCH --mem=40GB
-#SBATCH --output=job_output/job_%j.out
-#SBATCH --error=job_output/job_%j.err
+#SBATCH --output=job_output/alignment_tax_job_%j.out
+#SBATCH --error=job_output/alignment_tax_job_%j.err
 
 #Loading modules
 module load 2022
