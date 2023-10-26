@@ -47,8 +47,6 @@ class Llama2Helper:
             torch_dtype=torch.half,
         )
         self.tokenizer = init_tokenizer(model_name, hf_token=hf_token)
-        #NOTE:  I do not know what the effect of a certain pad token is
-        self.tokenizer.pad_token = self.tokenizer.eos_token
 
         for i, layer in enumerate(self.model.model.layers):
             self.model.model.layers[i] = BlockOutputWrapper(layer)
@@ -87,5 +85,6 @@ def init_tokenizer(model_name, hf_token):
         token=hf_token,
         torch_dtype=torch.half,
     )
+    #NOTE:  I do not know what the effect of a certain pad token is
     tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
