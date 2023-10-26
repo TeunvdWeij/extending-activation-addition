@@ -4,7 +4,7 @@
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=16
 #SBATCH --partition=gpu
-#SBATCH --time=03:00:00
+#SBATCH --time=01:00:00
 #SBATCH --mem=40GB
 #SBATCH --output=job_output/get_acts_job_%j.out
 #SBATCH --error=job_output/get_acts_job_%j.err
