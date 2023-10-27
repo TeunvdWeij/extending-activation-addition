@@ -1,7 +1,39 @@
 import json
+from operator import pos
 import subprocess
+import torch
 
+from torch.nn.functional import log_softmax
 from datasets import load_dataset
+
+
+def load_acts(device="cuda", pos_path=None, neg_path=None):
+    assert pos_path or neg_path, "No path has been passed."
+
+    returns = []
+    note =  ""
+
+    if pos_path:
+        pos_acts = torch.load(pos_path, map_location=device)
+        note += f"Pos acts has mode {pos_acts.mode}"
+        returns.append(pos_acts)
+    if neg_path:
+        neg_acts = torch.load(neg_path, map_location=device)
+        note += f"Neg acts has mode {neg_acts.mode}"
+        returns.append(neg_acts)
+    
+    returns.append(note)
+    return returns
+
+
+# adapted from https://github.com/pesvut/separability/blob/main/src/separability/eval.py
+def calc_perplexity(true_tokens: torch.Tensor, logits: torch.Tensor):
+    """Computes mean cross entropy loss."""
+
+    log_probs = log_softmax(logits, dim=-1)
+    #TODO: understand what this does
+    predicted_log_probs = log_probs.gather(dim=-1, index=true_tokens[..., None])[..., 0]
+    return torch.exp(torch.mean(-predicted_log_probs))
 
 
 def get_skip_tokens(mode="all", skip="skip50", data_type="tokens_int"):
@@ -19,7 +51,7 @@ def get_skip_tokens(mode="all", skip="skip50", data_type="tokens_int"):
 
     with open("data/skip_tokens.json", "r") as f:
         skip_tokens = json.load(f)
-    
+
     return skip_tokens[mode][skip][data_type]
 
 
@@ -75,7 +107,7 @@ def acc(t1, t2, f=None, top1=True):
 
 
 # adapted from https://github.com/pesvut/separability/blob/b435310c5728dcfacb0312799d98ba6e7146507c/src/separability/texts.py#L3
-def load_pile(split, mode, batch_size, shuffle=True, iterable=True):
+def load_pile(split: str, mode: str, shuffle: bool = True, iterable: bool = True):
     """
     Load pile given certain selection.
 
@@ -90,7 +122,7 @@ def load_pile(split, mode, batch_size, shuffle=True, iterable=True):
 
     # with this shuffle seed I ensure that the dataset is the same across runs
     if shuffle:
-        dataset = dataset.shuffle(seed=13, buffer_size=batch_size)
+        dataset = dataset.shuffle(seed=13)
 
     if mode == "only_text":
         dataset = dataset.filter(
@@ -103,6 +135,7 @@ def load_pile(split, mode, batch_size, shuffle=True, iterable=True):
     return iter(dataset) if iterable else dataset
 
 
+# NOTE: currently unused
 def get_subset_from_dataset(dataset, num_samples):
     """
     Get a specific number of samples from the  dataset.

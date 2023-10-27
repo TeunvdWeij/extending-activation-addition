@@ -31,7 +31,7 @@ class BlockOutputWrapper(torch.nn.Module):
 
 
 class Llama2Helper:
-    def __init__(self, model_name="meta-llama/Llama-2-7b-hf", hf_token=None):
+    def __init__(self, model_name="meta-llama/Llama-2-7b-hf", hf_token=None, dtype=torch.half):
         self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -44,9 +44,9 @@ class Llama2Helper:
             model_name,
             device_map="auto",
             token=hf_token,
-            torch_dtype=torch.half,
+            torch_dtype=dtype,
         )
-        self.tokenizer = init_tokenizer(model_name, hf_token=hf_token)
+        self.tokenizer = init_tokenizer(model_name, hf_token=hf_token, dtype=dtype)
 
         for i, layer in enumerate(self.model.model.layers):
             self.model.model.layers[i] = BlockOutputWrapper(layer)
@@ -78,12 +78,12 @@ class Llama2Helper:
             layer.reset()
 
 
-def init_tokenizer(model_name, hf_token):
+def init_tokenizer(model_name, hf_token, dtype=torch.half):
     tokenizer =  AutoTokenizer.from_pretrained(
         model_name,
         device_map="auto",
         token=hf_token,
-        torch_dtype=torch.half,
+        torch_dtype=dtype,
     )
     #NOTE:  I do not know what the effect of a certain pad token is
     tokenizer.pad_token = tokenizer.eos_token
