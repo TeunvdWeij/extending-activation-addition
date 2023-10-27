@@ -3,6 +3,7 @@ import torch
 
 class ActivationTensor:
     """Class to save activations and its meta data"""
+
     def __init__(
         self,
         tensor: torch.Tensor,
@@ -32,12 +33,11 @@ class ActivationTensor:
         self.contains_inf = self.check_tensor(torch.isinf)
         self.contains_nan = self.check_tensor(torch.isnan)
 
-    
-    def check_tensor(self, f):
+    def check_tensor(self, f) -> bool:
         """Checks the tensor using the passed function and return the status."""
         return f(self.tensor).any().item()
 
-    def save(self):
+    def save(self) -> None:
         """Saves the tensor to file and prints success message or handles exception."""
         try:
             torch.save(self, self.file_path)

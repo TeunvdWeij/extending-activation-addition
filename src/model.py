@@ -34,6 +34,7 @@ class Llama2Helper:
     def __init__(self, model_name="meta-llama/Llama-2-7b-hf", hf_token=None, dtype=torch.half):
         self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.dtype = dtype
 
         # allowing to directly implement hf token
         if hf_token is None:

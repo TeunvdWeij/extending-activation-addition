@@ -12,7 +12,7 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v2.01.json"
+file_path = "results/alignment_tax_v2.03.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 # I can change this to 1_000_000 but this does require significant compute
@@ -23,18 +23,17 @@ injection_coefficients = (0, 20, 40, 75, 100, 150, 200, 250, 300, 400, 500)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model_name = "meta-llama/Llama-2-7b-chat-hf"
-model = Llama2Helper(model_name=model_name, hf_token=get_hf_token())
+model = Llama2Helper(model_name=model_name, hf_token=get_hf_token(), dtype=torch.bfloat16)
 
-pos_act_file_path = "data/activations/Llama-2-7b-chat-hf_v2.01.pt"
-pos_avg_acts = torch.load(pos_act_file_path, map_location=device)
+pos_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-text_2.04.pt"
+pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
 # turn the activations into a unit vector for easier scaling
 pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
 
-neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_v2.02.pt"
-neg_avg_acts = torch.load(neg_act_file_path, map_location=device)
+neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-code_v2.08.pt"
+neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
 # turn the activations into a unit vector for easier scaling
 neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
-
 
 # # some dummy input to get the shape of layer
 # model.get_logits(torch.tensor([[1]]))
@@ -50,7 +49,7 @@ results["meta"] = {
     "max_seq_length": max_seq_length,
     "injection_coefficients": injection_coefficients,
     "total_tokens_per_ic": total_tokens_per_ic,
-    "note": "test with new acts, although they contain infs",
+    "note": "redo test with fix for NaN",
 }
 
 for mode in ("only_text", "only_code"):
@@ -64,7 +63,7 @@ for mode in ("only_text", "only_code"):
 
         # clear and set the activations to be used in the forward pass
         model.reset_all()
-        model.set_add_activations(layer, -1 * ic * acts[0])
+        model.set_add_activations(layer, ic*(pos_acts-neg_acts))
 
         # init dict for this injection coefficient
         ic_res = {
@@ -73,7 +72,7 @@ for mode in ("only_text", "only_code"):
             "skip50_top1_acc": [],
             "skip50_top10_acc": [],
             "total_encoded_tokens": [],
-            "total_skipped_tokens": [],
+            "total_tokens_with_skip": [],
             "total_time_in_sec": [],
         }
 
@@ -110,16 +109,24 @@ for mode in ("only_text", "only_code"):
 
             # create filter which also checks whether true tokens are in skip50
             f_50 = ~(encoded.unsqueeze(-1) == skip_tokens).any(-1)
-
-            skip50_top1_acc = acc(encoded, top1_preds, f_50)
-            skip50_top10_acc = acc(encoded, top10_preds, f_50, top1=False)
+            total_tokens_with_skip = torch.sum(f_50).item()
+            # after skipping it could leave sample with 0 tokens.
+            # in this case, set acc to 0 for easier handling.
+            # note that the *weighted* acc is later calculated, so 
+            # this has no effect on the overall accuracy
+            
+            if total_tokens_with_skip > 0:
+                skip50_top1_acc = acc(encoded, top1_preds, f_50)
+                skip50_top10_acc = acc(encoded, top10_preds, f_50, top1=False)
+            else:
+                skip50_top1_acc, skip50_top10_acc = 0, 0
             
             ic_res["top1_acc"].append(top1_acc)
             ic_res["top10_acc"].append(top10_acc)
             ic_res["skip50_top1_acc"].append(skip50_top1_acc)
             ic_res["skip50_top10_acc"].append(skip50_top10_acc)
             ic_res["total_encoded_tokens"].append(encoded.numel())
-            ic_res["total_skipped_tokens"].append(torch.sum(f_50).item())
+            ic_res["total_tokens_with_skip"].append(total_tokens_with_skip)
             ic_res["total_time_in_sec"].append(
                 round(time.perf_counter() - start_time, 3)
             )
