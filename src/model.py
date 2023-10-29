@@ -2,6 +2,7 @@
 # adapted from https://github.com/nrimsky/LM-exp/blob/main/sycophancy/sycophancy_steering.ipynb.
 
 import torch
+
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 
@@ -11,7 +12,6 @@ class BlockOutputWrapper(torch.nn.Module):
         self.block = block
         self.last_hidden_state = None
         self.add_activations = None
-        self.output_init = None
 
     def forward(self, *args, **kwargs):
         output = self.block(*args, **kwargs)
@@ -31,7 +31,9 @@ class BlockOutputWrapper(torch.nn.Module):
 
 
 class Llama2Helper:
-    def __init__(self, model_name="meta-llama/Llama-2-7b-hf", hf_token=None, dtype=torch.half):
+    def __init__(
+        self, model_name="meta-llama/Llama-2-7b-hf", hf_token=None, dtype=torch.half
+    ):
         self.model_name = model_name
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.dtype = dtype
@@ -80,12 +82,12 @@ class Llama2Helper:
 
 
 def init_tokenizer(model_name, hf_token, dtype=torch.half):
-    tokenizer =  AutoTokenizer.from_pretrained(
+    tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         device_map="auto",
         token=hf_token,
         torch_dtype=dtype,
     )
-    #NOTE:  I do not know what the effect of a certain pad token is
+    # NOTE:  I do not know what the effect of a certain pad token is
     tokenizer.pad_token = tokenizer.eos_token
     return tokenizer

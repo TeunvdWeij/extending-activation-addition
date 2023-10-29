@@ -12,7 +12,7 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v2.03.json"
+file_path = "results/alignment_tax_v2.05.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 # I can change this to 1_000_000 but this does require significant compute
@@ -35,11 +35,19 @@ neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
 # turn the activations into a unit vector for easier scaling
 neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
 
+mean_act_file_path = "data/activations/Llama-2-7b-chat-hf_all_v2.07.pt"
+mean_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
+# turn the activations into a unit vector for easier scaling
+mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
+
 # # some dummy input to get the shape of layer
 # model.get_logits(torch.tensor([[1]]))
 # acts_shape = model.get_last_activations(layer).shape
 # random_acts = torch.rand(acts_shape).to(torch.half).to(device)
 # acts = random_acts / torch.norm(random_acts, p=2)
+
+acts = -neg_acts 
+# acts = pos_acts - neg_acts - mean_acts
 
 results = {}
 results["meta"] = {
@@ -49,7 +57,7 @@ results["meta"] = {
     "max_seq_length": max_seq_length,
     "injection_coefficients": injection_coefficients,
     "total_tokens_per_ic": total_tokens_per_ic,
-    "note": "redo test with fix for NaN",
+    "note": "subtracting code",
 }
 
 for mode in ("only_text", "only_code"):
@@ -63,7 +71,8 @@ for mode in ("only_text", "only_code"):
 
         # clear and set the activations to be used in the forward pass
         model.reset_all()
-        model.set_add_activations(layer, ic*(pos_acts-neg_acts))
+        model.set_add_activations(layer, ic*acts)
+        
 
         # init dict for this injection coefficient
         ic_res = {

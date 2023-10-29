@@ -16,6 +16,7 @@ class ActivationTensor:
         truncation: bool,
         total_time: float,
         total_tokens: int,
+        mean: bool,
         note: str,
     ):
         self.tensor = tensor
@@ -28,6 +29,7 @@ class ActivationTensor:
         self.truncation = truncation
         self.total_time = total_time
         self.total_tokens = total_tokens
+        self.mean = mean
         self.note = note
 
         self.contains_inf = self.check_tensor(torch.isinf)
