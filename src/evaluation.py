@@ -216,15 +216,14 @@ class Evaluation:
 
         # create filter checking for tokens being in self.skip_tokens
 
-        f_50 = ~(encoded.unsqueeze(-1) == skip_tokens.any(-1))
+        f_50 = ~(encoded.unsqueeze(-1) == skip_tokens.any(-1)).squeeze(-1)
         total_tokens_with_skip = torch.sum(f_50).item()
+
         # after skipping it could leave sample with 0 tokens.
         # in this case, set acc to 0 for easier handling.
         # note that the *weighted* acc is later calculated, so
         # this has no effect on the overall accuracy
-
         if total_tokens_with_skip > 0:
-            print(encoded.shape, top1_preds.shape, f_50.shape)
             skip50_top1_acc = acc(encoded, top1_preds, f_50)
             skip50_top10_acc = acc(encoded, top10_preds, f_50, top1=False)
         else:
