@@ -3,6 +3,8 @@ import json
 import time
 import os
 
+from sklearn.decomposition import PCA
+
 from model import Llama2Helper
 from utils import (
     load_pile,
@@ -12,7 +14,7 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v2.05.json"
+file_path = "results/alignment_tax_v2.06.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 # I can change this to 1_000_000 but this does require significant compute
@@ -25,20 +27,20 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "meta-llama/Llama-2-7b-chat-hf"
 model = Llama2Helper(model_name=model_name, hf_token=get_hf_token(), dtype=torch.bfloat16)
 
-pos_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-text_2.04.pt"
-pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
-# turn the activations into a unit vector for easier scaling
-pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
+# pos_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-text_2.04.pt"
+# pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
+# # turn the activations into a unit vector for easier scaling
+# pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
 
-neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-code_v2.08.pt"
-neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
-# turn the activations into a unit vector for easier scaling
-neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
+# neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-code_v2.08.pt"
+# neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
+# # turn the activations into a unit vector for easier scaling
+# neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
 
-mean_act_file_path = "data/activations/Llama-2-7b-chat-hf_all_v2.07.pt"
-mean_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
-# turn the activations into a unit vector for easier scaling
-mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
+# mean_act_file_path = "data/activations/Llama-2-7b-chat-hf_all_v2.07.pt"
+# mean_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
+# # turn the activations into a unit vector for easier scaling
+# mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
 
 # # some dummy input to get the shape of layer
 # model.get_logits(torch.tensor([[1]]))
@@ -46,9 +48,13 @@ mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
 # random_acts = torch.rand(acts_shape).to(torch.half).to(device)
 # acts = random_acts / torch.norm(random_acts, p=2)
 
-acts = -neg_acts 
+# acts = -neg_acts 
 # acts = pos_acts - neg_acts - mean_acts
-
+acts_list = torch.load("data/activations/Llama-2-7b/Llama-2-7b-chat-hf_only-code_no-mean_v2.09.pt", map_location="cpu").tensor
+# normalize 
+acts_list = acts_list / torch.norm(acts_list, p=2)
+pca = PCA(n_components=1)
+acts = torch.tensor(pca.fit_transform(acts_list.T.to(float))).to(model.dtype).to(device).squeeze()
 results = {}
 results["meta"] = {
     "model_name": model_name,
@@ -57,7 +63,7 @@ results["meta"] = {
     "max_seq_length": max_seq_length,
     "injection_coefficients": injection_coefficients,
     "total_tokens_per_ic": total_tokens_per_ic,
-    "note": "subtracting code",
+    "note": "subtracting PCA from 100 acts",
 }
 
 for mode in ("only_text", "only_code"):
@@ -67,13 +73,12 @@ for mode in ("only_text", "only_code"):
     dataset = load_pile(split="validation", mode=mode, iterable=True)
 
     for ic in injection_coefficients:
-        print(f"Mode: {mode}.   Injection Coefficient: {ic}")
+        print(f"Mode: {mode}.   Injection Coefficient: {ic}", flush=True)
 
         # clear and set the activations to be used in the forward pass
         model.reset_all()
         model.set_add_activations(layer, ic*acts)
-        
-
+        print(f"mean acts: {torch.mean(ic*acts)}")
         # init dict for this injection coefficient
         ic_res = {
             "top1_acc": [],

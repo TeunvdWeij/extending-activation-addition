@@ -7,6 +7,12 @@ from torch.nn.functional import log_softmax
 from datasets import load_dataset
 
 
+def get_model_name(params:str, chat:bool):
+    if chat:
+        return f"meta-llama/Llama-2-{params}-hf"
+    else:
+        return f"meta-llama/Llama-2-{params}-chat-hf"
+
 def load_acts(device="cuda", pos_path=None, neg_path=None):
     assert pos_path or neg_path, "No path has been passed."
 

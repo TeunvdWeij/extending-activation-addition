@@ -1,48 +1,88 @@
+import os 
 import torch
 
+from typing import Union
+
+from utils import get_model_name
 
 class ActivationTensor:
     """Class to save activations and its meta data"""
 
     def __init__(
         self,
-        tensor: torch.Tensor,
-        num_samples: int,
-        file_path: str,
-        mode: str,
-        model_name: str,
-        layer: int,
-        max_seq_length: int,
-        truncation: bool,
-        total_time: float,
-        total_tokens: int,
-        mean: bool,
-        note: str,
+        note,
+        version, 
+        num_samples,
+        mode,
+        model_params,
+        chat,
+        layer,
+        max_seq_length,
+        truncation,
+        mean,
+        dtype
     ):
-        self.tensor = tensor
+        self.note = note
+        self.version = version
         self.num_samples = num_samples
-        self.file_path = file_path
         self.mode = mode
-        self.model_name = model_name
+        self.model_params = model_params
+        self.chat = chat
         self.layer = layer
         self.max_seq_length = max_seq_length
         self.truncation = truncation
-        self.total_time = total_time
-        self.total_tokens = total_tokens
         self.mean = mean
-        self.note = note
 
-        self.contains_inf = self.check_tensor(torch.isinf)
-        self.contains_nan = self.check_tensor(torch.isnan)
+        if dtype == "float16":
+            self.dtype = torch.float16
+        if dtype == "bfloat16":
+            self.dtype = torch.bfloat16
+        
+        self.model_name = get_model_name(model_params, chat)
 
-    def check_tensor(self, f) -> bool:
-        """Checks the tensor using the passed function and return the status."""
-        return f(self.tensor).any().item()
+        # either store the mean or save acts in list
+        self.acts = torch.tensor(0) if mean else []
+        self.save_path = self.generate_save_path_string()
 
-    def save(self) -> None:
-        """Saves the tensor to file and prints success message or handles exception."""
+
+    def check_acts(self, acts):
+        """Check whether values in acts are correct."""
+        if torch.isinf(acts).any().item():
+            raise ValueError("Infinite value in acts.")
+        
+        if torch.isnan(acts).any().item():
+            raise ValueError("Nan value in acts.")
+
+    def set_total_time(self, total_time):
+        self.total_time = total_time
+
+    def set_total_tokens(self, total_tokens):
+        self.total_tokens = total_tokens
+
+    def generate_save_path_string(self):
+        model_name = get_model_name(self.model_params, self.chat)
+        folders = f"data/activations/Llama-2-{self.model_params}/"
+        mean_name = "mean" if  self.mean else "no_mean"
+        save_path = f"{folders}{self.mode.replace('_', '-')}_{mean_name}_v{self.version}.pt"
+        print(folders)
+        assert os.path.isdir(folders), "Path does not exists."
+        assert not os.path.isfile(save_path), "File already exists, can't overwrite file."
+        return save_path 
+
+
+    def process_new_acts(self, new_acts, i):
+        self.check_acts(new_acts)
+
+        if self.mean:
+            self.acts = (self.acts * i + new_acts) / (i + 1)
+        else:
+            self.acts.append(new_acts) # type: ignore
+
+    def save(self):
+        if not self.mean:
+            self.acts = torch.vstack(self.acts) # type: ignore
         try:
-            torch.save(self, self.file_path)
-            print(f"SUCCESS: Tensor saved with metadata at {self.file_path}")
+            torch.save(self, self.save_path)
+            print(f"SUCCESS: Tensor saved with metadata at {self.save_path}")
         except Exception as e:
             print(f"FAILED: Could not save the tensor. Error: {e}")

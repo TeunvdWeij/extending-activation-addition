@@ -14,4 +14,4 @@ module load 2022
 module load Python/3.10.4-GCCcore-11.3.0
 
 source output_control_venv/bin/activate
-python src/get_activations.py
+python src/get_activations.py --mean False --version "2.13" --note "for PCA 5k samples "
