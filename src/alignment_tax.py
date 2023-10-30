@@ -14,7 +14,7 @@ from utils import (
 )
 
 # first check if no file is being overwritten
-file_path = "results/alignment_tax_v2.06.json"
+file_path = "results/alignment_tax_v2.12.json"
 assert not os.path.isfile(file_path), "File already exists, nothing changed."
 
 # I can change this to 1_000_000 but this does require significant compute
@@ -27,7 +27,7 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 model_name = "meta-llama/Llama-2-7b-chat-hf"
 model = Llama2Helper(model_name=model_name, hf_token=get_hf_token(), dtype=torch.bfloat16)
 
-# pos_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-text_2.04.pt"
+# pos_act_file_path = "data/activations/Llama-2-7b/Llama-2-7b-chat-hf_only-text_2.04.pt"
 # pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
 # # turn the activations into a unit vector for easier scaling
 # pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
@@ -45,16 +45,33 @@ model = Llama2Helper(model_name=model_name, hf_token=get_hf_token(), dtype=torch
 # # some dummy input to get the shape of layer
 # model.get_logits(torch.tensor([[1]]))
 # acts_shape = model.get_last_activations(layer).shape
-# random_acts = torch.rand(acts_shape).to(torch.half).to(device)
+# random_acts = torch.rand(acts_shape).to(model.dtype).to(model.device)
 # acts = random_acts / torch.norm(random_acts, p=2)
 
-# acts = -neg_acts 
-# acts = pos_acts - neg_acts - mean_acts
-acts_list = torch.load("data/activations/Llama-2-7b/Llama-2-7b-chat-hf_only-code_no-mean_v2.09.pt", map_location="cpu").tensor
+
 # normalize 
-acts_list = acts_list / torch.norm(acts_list, p=2)
+acts_only_code = torch.load("data/activations/Llama-2-7b/only-code_no_mean_v2.17.pt", map_location="cpu").acts
+acts_only_code = acts_only_code / torch.norm(acts_only_code, p=2)
 pca = PCA(n_components=1)
-acts = torch.tensor(pca.fit_transform(acts_list.T.to(float))).to(model.dtype).to(device).squeeze()
+pca_only_code = torch.tensor(pca.fit_transform(acts_only_code.T.to(float))).to(model.dtype).to(device).squeeze()
+
+# normalize 
+acts_only_text = torch.load("data/activations/Llama-2-7b/only-text_no_mean_v2.18.pt", map_location="cpu").acts
+acts_only_text = acts_only_text / torch.norm(acts_only_text, p=2)
+pca = PCA(n_components=1)
+pca_only_text = torch.tensor(pca.fit_transform(acts_only_text.T.to(float))).to(model.dtype).to(device).squeeze()
+
+# normalize 
+acts_all = torch.load("data/activations/Llama-2-7b/all_no_mean_v2.16.pt", map_location="cpu").acts
+acts_all = acts_all / torch.norm(acts_all, p=2)
+pca = PCA(n_components=1)
+pca_all = torch.tensor(pca.fit_transform(acts_all.T.to(float))).to(model.dtype).to(device).squeeze()
+
+# acts = pca_only_text - pca_only_code - pca_all
+# acts = pca_only_text - pca_only_code
+acts = pca_only_code
+# acts = pca_only_text - pca_only_code - pca_all
+
 results = {}
 results["meta"] = {
     "model_name": model_name,
@@ -63,7 +80,7 @@ results["meta"] = {
     "max_seq_length": max_seq_length,
     "injection_coefficients": injection_coefficients,
     "total_tokens_per_ic": total_tokens_per_ic,
-    "note": "subtracting PCA from 100 acts",
+    "note": "PCA add code",
 }
 
 for mode in ("only_text", "only_code"):
@@ -78,7 +95,6 @@ for mode in ("only_text", "only_code"):
         # clear and set the activations to be used in the forward pass
         model.reset_all()
         model.set_add_activations(layer, ic*acts)
-        print(f"mean acts: {torch.mean(ic*acts)}")
         # init dict for this injection coefficient
         ic_res = {
             "top1_acc": [],
@@ -94,8 +110,8 @@ for mode in ("only_text", "only_code"):
         for sample in dataset:
             if analyzed_tokens > total_tokens_per_ic:
                 break
-            # could use this if OOM memory issues happen
-            # torch.cuda.empty_cache()
+            # can use this if OOM memory issues happen, probably slows code down a bit
+            torch.cuda.empty_cache()
             start_time = time.perf_counter()
 
             # truncate to context window, pad to longest sequence. detach and to device for gpu memory usage
