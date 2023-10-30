@@ -3,16 +3,11 @@ import json
 import time
 import os
 
+from glob import glob
 from torch.nn.functional import normalize
 
 from model import Llama2Helper
-from utils import (
-    load_pile,
-    get_hf_token,
-    get_skip_tokens,
-    acc,
-    get_model_name,
-)
+from utils import get_hf_token, acc, get_model_name
 
 
 class Evaluation:
@@ -29,6 +24,8 @@ class Evaluation:
         layers,
         model_params,
         dtype,
+        pos_acts,
+        neg_acts,
     ):
         self.note = note
         self.version = (version,)
@@ -40,6 +37,8 @@ class Evaluation:
         self.ics = ics
         self.layers = layers
         self.model_params = model_params
+        self.pos_acts = pos_acts
+        self.neg_acts = neg_acts
 
         if dtype == "float16":
             self.dtype = torch.float16
@@ -55,6 +54,9 @@ class Evaluation:
         self.results = {}
         self.results["meta"] = self.get_meta_info()
 
+    def __str__(self) -> str:
+        return str(self.__dict__)
+    
     def get_model(self):
         model = Llama2Helper(
             model_name=self.model_name, hf_token=get_hf_token(), dtype=self.dtype
@@ -113,8 +115,24 @@ class Evaluation:
             .to(self.device)
         )
         return encoded
+    
+    def acts_compatibility_check(acts):
+        #TODO: should change to layers with new activation generation
+        to_check = (
+            "num_samples", 
+            "layer", 
+            "max_seq_length",
+            "truncation",
+        )
 
-    def set_random_acts(self):
+        for var in to_check:
+            values = [getattr(act, var) for act in acts]
+            print(values)
+            if not values.count(values[0]) == len(values):
+                raise RuntimeError("Activations do not match up. Maybe generated more activations with the same generation details.")
+
+
+    def generate_random_acts(self):
         assert self.acts is None, "Acts are not None, cannot overwwrite."
 
         # some dummy input to get the shape of layer
@@ -123,11 +141,59 @@ class Evaluation:
         # all layers have the same shape
         acts_shape = self.model.get_last_activations(self.layers[0]).shape
         random_acts = torch.rand(acts_shape).to(self.dtype).to(self.device)
-        self.acts = random_acts / torch.norm(random_acts, p=2)
+        random_acts = normalize(random_acts, p=2, dim =1)
+        print(random_acts.shape, print(random_acts))
+        return random_acts
 
-    def set_acts(self, acts):
-        # TODO: extend this code
-        assert self.acts is None, "Acts are not None, cannot overwwrite."
+    def get_acts_path(self, mode):
+        # finding the correct file name, bit hacky but is faster than loading many activations
+        path = "data/activations/Llama-2"
+        path += self.model_params
+        path += mode.replace("_", "-")
+        if self.mean:
+            path += "_mean_"
+        else:
+            path += "_no-mean_"
+
+        path_list = glob(path + "v*.pt")
+        if len(path_list) == 0:
+            raise RuntimeError("No activations available. Change variables or generate new activations.")
+        elif len(path_list) > 1:
+            raise RuntimeError("Too many options, please clean activations.")
+        else:
+            return path_list[0]
+    
+    def set_acts(self):
+        assert self.pos_acts or self.neg_acts, "No activations given, set a value for either pos_acts or neg_acts"
+        assert self.acts is None, "Activations must be None, they cannot be overwritten."
+
+        pos_acts, neg_acts = [], []
+        list_to_check = []
+        for mode in self.pos_acts:
+            if mode == "random":
+                pos_acts.append(self.set_random_acts())
+            else:
+                data = torch.load(self.get_acts_path(mode))
+                list_to_check.append(data)
+                pos_acts.append(data.acts)
+
+        for mode in self.neg_acts:
+            if mode == "random":
+                neg_acts.append(self.set_random_acts())
+            else:
+                data = torch.load(self.get_acts_path(mode))
+                list_to_check.append(data)
+                neg_acts.append(data.acts)
+
+        self.acts_compatibility_check(list_to_check)
+
+        if pos_acts:
+            acts = torch.sum(torch.vstack(tuple(pos_acts)), dim=0)
+            if neg_acts:
+                acts -= torch.sum(torch.vstack(tuple(neg_acts)), dim=0)
+        else:
+            acts = -torch.sum(torch.vstack(tuple(neg_acts)), dim=0)
+
         self.acts = acts
 
     def get_skip_tokens(self, mode="all", skip="skip50", data_type="tokens_int"):

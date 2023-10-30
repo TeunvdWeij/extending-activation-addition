@@ -1,20 +1,10 @@
 import torch
-import json
 import time
-import os
 import argparse
 
-from torch.nn.functional import normalize
-from sklearn.decomposition import PCA
 from evaluation import Evaluation
 
-from model import Llama2Helper
-from utils import (
-    load_pile,
-    get_hf_token,
-    get_skip_tokens,
-    acc,
-)
+from utils import load_pile
 
 
 def evaluate(eval_obj: Evaluation):
@@ -95,6 +85,12 @@ def arg_parser():
     parser.add_argument(
         "--dtype", type=str, choices=["float16", "bfloat16"], default="bfloat16"
     )
+    parser.add_argument(
+        "--pos_acts", nargs="+", type=str, choices=["all", "only_text", "only_code", "random"], default=""
+    )    
+    parser.add_argument(
+        "--neg_acts", nargs="+", type=str, choices=["all", "only_text", "only_code", "random"], default=""
+    )
     return parser.parse_args()
 
 
@@ -113,6 +109,8 @@ def main():
         args.layers,
         args.model_params,
         args.dtype,
+        args.pos_acts,
+        args.neg_acts,
     )
 
     print(f"Eval object: {eval_obj.__dict__}")
