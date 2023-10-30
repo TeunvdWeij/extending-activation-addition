@@ -56,11 +56,13 @@ def arg_parser():
     # change so multiple layers can be used
     parser.add_argument("--layer", type=int, default=29)
     parser.add_argument("--max_seq_length", type=int, default=4096)
-        
-    parser.add_argument('--chat', default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument('--truncation', default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument('--mean', default=True, action=argparse.BooleanOptionalAction)
-        
+
+    parser.add_argument("--chat", default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--truncation", default=True, action=argparse.BooleanOptionalAction
+    )
+    parser.add_argument("--mean", default=True, action=argparse.BooleanOptionalAction)
+
     parser.add_argument(
         "--mode",
         type=str,
