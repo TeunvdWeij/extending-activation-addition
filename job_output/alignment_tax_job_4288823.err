@@ -1,0 +1,16 @@
+Loading checkpoint shards:   0%|          | 0/2 [00:00<?, ?it/s]Loading checkpoint shards:  50%|█████     | 1/2 [00:06<00:06,  6.14s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:08<00:00,  3.70s/it]Loading checkpoint shards: 100%|██████████| 2/2 [00:08<00:00,  4.07s/it]
+/gpfs/home2/tvdweij/output_control/output_control_venv/lib/python3.10/site-packages/transformers/utils/hub.py:374: FutureWarning: The `use_auth_token` argument is deprecated and will be removed in v5 of Transformers.
+  warnings.warn(
+Resolving data files:   0%|          | 0/30 [00:00<?, ?it/s]Resolving data files:   7%|▋         | 2/30 [00:00<00:04,  5.87it/s]Resolving data files: 100%|██████████| 30/30 [00:00<00:00, 87.99it/s]
+Traceback (most recent call last):
+  File "/gpfs/home2/tvdweij/output_control/src/evaluate.py", line 123, in <module>
+    main()
+  File "/gpfs/home2/tvdweij/output_control/src/evaluate.py", line 119, in main
+    evaluate(eval_obj)
+  File "/gpfs/home2/tvdweij/output_control/src/evaluate.py", line 50, in evaluate
+    sample_results = eval_obj.process_predictions(
+  File "/gpfs/home2/tvdweij/output_control/src/evaluation.py", line 162, in process_predictions
+    skip50_top1_acc = acc(encoded, top1_preds, f_50)
+  File "/gpfs/home2/tvdweij/output_control/src/utils.py", line 105, in acc
+    t1, t2 = t1[f], t2[f]
+IndexError: too many indices for tensor of dimension 2

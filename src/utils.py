@@ -7,17 +7,18 @@ from torch.nn.functional import log_softmax
 from datasets import load_dataset
 
 
-def get_model_name(params:str, chat:bool):
+def get_model_name(params: str, chat: bool):
     if chat:
         return f"meta-llama/Llama-2-{params}-hf"
     else:
         return f"meta-llama/Llama-2-{params}-chat-hf"
 
+
 def load_acts(device="cuda", pos_path=None, neg_path=None):
     assert pos_path or neg_path, "No path has been passed."
 
     returns = []
-    note =  ""
+    note = ""
 
     if pos_path:
         pos_acts = torch.load(pos_path, map_location=device)
@@ -27,7 +28,7 @@ def load_acts(device="cuda", pos_path=None, neg_path=None):
         neg_acts = torch.load(neg_path, map_location=device)
         note += f"Neg acts has mode {neg_acts.mode}"
         returns.append(neg_acts)
-    
+
     returns.append(note)
     return returns
 
@@ -37,7 +38,7 @@ def calc_perplexity(true_tokens: torch.Tensor, logits: torch.Tensor):
     """Computes mean cross entropy loss."""
 
     log_probs = log_softmax(logits, dim=-1)
-    #TODO: understand what this does
+    # TODO: understand what this does
     predicted_log_probs = log_probs.gather(dim=-1, index=true_tokens[..., None])[..., 0]
     return torch.exp(torch.mean(-predicted_log_probs))
 

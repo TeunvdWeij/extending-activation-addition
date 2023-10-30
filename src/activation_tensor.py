@@ -1,9 +1,10 @@
-import os 
+import os
 import torch
 
 from typing import Union
 
 from utils import get_model_name
+
 
 class ActivationTensor:
     """Class to save activations and its meta data"""
@@ -11,7 +12,7 @@ class ActivationTensor:
     def __init__(
         self,
         note,
-        version, 
+        version,
         num_samples,
         mode,
         model_params,
@@ -20,7 +21,7 @@ class ActivationTensor:
         max_seq_length,
         truncation,
         mean,
-        dtype
+        dtype,
     ):
         self.note = note
         self.version = version
@@ -37,19 +38,18 @@ class ActivationTensor:
             self.dtype = torch.float16
         if dtype == "bfloat16":
             self.dtype = torch.bfloat16
-        
+
         self.model_name = get_model_name(model_params, chat)
 
         # either store the mean or save acts in list
         self.acts = torch.tensor(0) if mean else []
         self.save_path = self.generate_save_path_string()
 
-
     def check_acts(self, acts):
         """Check whether values in acts are correct."""
         if torch.isinf(acts).any().item():
             raise ValueError("Infinite value in acts.")
-        
+
         if torch.isnan(acts).any().item():
             raise ValueError("Nan value in acts.")
 
@@ -62,13 +62,16 @@ class ActivationTensor:
     def generate_save_path_string(self):
         model_name = get_model_name(self.model_params, self.chat)
         folders = f"data/activations/Llama-2-{self.model_params}/"
-        mean_name = "mean" if  self.mean else "no_mean"
-        save_path = f"{folders}{self.mode.replace('_', '-')}_{mean_name}_v{self.version}.pt"
+        mean_name = "mean" if self.mean else "no_mean"
+        save_path = (
+            f"{folders}{self.mode.replace('_', '-')}_{mean_name}_v{self.version}.pt"
+        )
         print(folders)
         assert os.path.isdir(folders), "Path does not exists."
-        assert not os.path.isfile(save_path), "File already exists, can't overwrite file."
-        return save_path 
-
+        assert not os.path.isfile(
+            save_path
+        ), "File already exists, can't overwrite file."
+        return save_path
 
     def process_new_acts(self, new_acts, i):
         self.check_acts(new_acts)
@@ -76,11 +79,11 @@ class ActivationTensor:
         if self.mean:
             self.acts = (self.acts * i + new_acts) / (i + 1)
         else:
-            self.acts.append(new_acts) # type: ignore
+            self.acts.append(new_acts)  # type: ignore
 
     def save(self):
         if not self.mean:
-            self.acts = torch.vstack(self.acts) # type: ignore
+            self.acts = torch.vstack(self.acts)  # type: ignore
         try:
             torch.save(self, self.save_path)
             print(f"SUCCESS: Tensor saved with metadata at {self.save_path}")
