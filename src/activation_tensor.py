@@ -45,6 +45,10 @@ class ActivationTensor:
         self.acts = torch.tensor(0) if mean else []
         self.save_path = self.generate_save_path_string()
 
+    def __str__(self):
+        return self.__dict__
+        
+
     def check_acts(self, acts):
         """Check whether values in acts are correct."""
         if torch.isinf(acts).any().item():

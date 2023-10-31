@@ -14,4 +14,4 @@ module load 2022
 module load Python/3.10.4-GCCcore-11.3.0
 
 source output_control_venv/bin/activate
-python src/evaluate.py --note "debugging" --version 3.00
+python src/evaluate.py --version 3.00 --version "2.18" --note "testing with new activation logic" --pos_acts random only_text  --neg_acts only_code all --total_tokens_per_ic 100

@@ -124,20 +124,20 @@ if __name__ == "__main__":
 
 
 # ARCHIVE
-# pos_act_file_path = "data/activations/Llama-2-7b/Llama-2-7b-chat-hf_only-text_2.04.pt"
-# pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
-# # turn the activations into a unit vector for easier scaling
-# pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
+pos_act_file_path = "data/activations/Llama-2-7b/Llama-2-7b-chat-hf_only-text_2.04.pt"
+pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
+# turn the activations into a unit vector for easier scaling
+pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
 
-# neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-code_v2.08.pt"
-# neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
-# # turn the activations into a unit vector for easier scaling
-# neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
+neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-code_v2.08.pt"
+neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
+# turn the activations into a unit vector for easier scaling
+neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
 
-# mean_act_file_path = "data/activations/Llama-2-7b-chat-hf_all_v2.07.pt"
-# mean_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
-# # turn the activations into a unit vector for easier scaling
-# mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
+mean_act_file_path = "data/activations/Llama-2-7b-chat-hf_all_v2.07.pt"
+mean_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
+# turn the activations into a unit vector for easier scaling
+mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
 
 # # some dummy input to get the shape of layer
 # model.get_logits(torch.tensor([[1]]))
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 # pca_all = pca.fit(acts_all.float().numpy()).components_
 
 # # acts = pca_only_text - pca_only_code - pca_all
-# # acts = pca_only_text - pca_only_code
-# # acts = pca_only_text - pca_only_code - pca_all
+# acts = pca_only_text - pca_only_code
+# acts = pca_only_text - pca_only_code - pca_all
 # acts = torch.tensor(-pca_only_code + pca_only_text - pca_all).to(model.dtype).to(device)
 # print(f"Acts shape: {acts.shape}")
