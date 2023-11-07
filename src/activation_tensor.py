@@ -17,7 +17,7 @@ class ActivationTensor:
         mode,
         model_params,
         chat,
-        layer,
+        layers,
         max_seq_length,
         truncation,
         mean,
@@ -29,7 +29,7 @@ class ActivationTensor:
         self.mode = mode
         self.model_params = model_params
         self.chat = chat
-        self.layer = layer
+        self.layers = layers
         self.max_seq_length = max_seq_length
         self.truncation = truncation
         self.mean = mean
@@ -63,7 +63,6 @@ class ActivationTensor:
         self.total_tokens = total_tokens
 
     def generate_save_path_string(self):
-        model_name = get_model_name(self.model_params, self.chat)
         folders = f"data/activations/Llama-2-{self.model_params}/"
         mean_name = "mean" if self.mean else "no_mean"
         save_path = (
