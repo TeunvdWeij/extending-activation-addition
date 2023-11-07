@@ -4,10 +4,9 @@
 #SBATCH --gpus=1
 #SBATCH --cpus-per-task=16
 #SBATCH --partition=gpu
-#SBATCH --time=00:05:00
-#SBATCH --mem=40GB
-#SBATCH --output=job_output/alignment_tax_job_%j.out
-#SBATCH --error=job_output/alignment_tax_job_%j.err
+#SBATCH --time=00:15:00
+#SBATCH --output=job_output/eval_%j.out
+#SBATCH --error=job_output/eval_%j.err
 
 #Loading modules
 module load 2022
