@@ -9,7 +9,7 @@ from utils import load_pile
 
 def evaluate(eval_obj: Evaluation):
     model = eval_obj.get_model()
-    eval_obj.set_random_acts()
+    eval_obj.set_acts()
 
     for mode in eval_obj.modes:
         eval_obj.results[mode] = {}
@@ -119,48 +119,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# ARCHIVE
-pos_act_file_path = "data/activations/Llama-2-7b/Llama-2-7b-chat-hf_only-text_2.04.pt"
-pos_avg_acts = torch.load(pos_act_file_path, map_location=device).tensor
-# turn the activations into a unit vector for easier scaling
-pos_acts = pos_avg_acts / torch.norm(pos_avg_acts, p=2)
-
-neg_act_file_path = "data/activations/Llama-2-7b-chat-hf_only-code_v2.08.pt"
-neg_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
-# turn the activations into a unit vector for easier scaling
-neg_acts = neg_avg_acts / torch.norm(neg_avg_acts, p=2)
-
-mean_act_file_path = "data/activations/Llama-2-7b-chat-hf_all_v2.07.pt"
-mean_avg_acts = torch.load(neg_act_file_path, map_location=device).tensor
-# turn the activations into a unit vector for easier scaling
-mean_acts = mean_avg_acts / torch.norm(mean_avg_acts, p=2)
-
-# # some dummy input to get the shape of layer
-# model.get_logits(torch.tensor([[1]]))
-# acts_shape = model.get_last_activations(layer).shape
-# random_acts = torch.rand(acts_shape).to(model.dtype).to(model.device)
-# acts = random_acts / torch.norm(random_acts, p=2)
-
-
-# acts_only_code = torch.load("data/activations/Llama-2-7b/only-code_no_mean_v2.17.pt", map_location="cpu").acts
-# acts_only_code = normalize(acts_only_code, p=2, dim=1)
-# pca = PCA(n_components=1)
-# pca_only_code = pca.fit(acts_only_code.float().numpy()).components_
-
-# acts_only_text = torch.load("data/activations/Llama-2-7b/only-text_no_mean_v2.18.pt", map_location="cpu").acts
-# acts_only_text = normalize(acts_only_text, p=2, dim=1)
-# pca = PCA(n_components=1)
-# pca_only_text = pca.fit(acts_only_text.float().numpy()).components_
-
-# acts_all = torch.load("data/activations/Llama-2-7b/all_no_mean_v2.16.pt", map_location="cpu").acts
-# acts_all = normalize(acts_all, p=2, dim=1)
-# pca = PCA(n_components=1)
-# pca_all = pca.fit(acts_all.float().numpy()).components_
-
-# # acts = pca_only_text - pca_only_code - pca_all
-# acts = pca_only_text - pca_only_code
-# acts = pca_only_text - pca_only_code - pca_all
-# acts = torch.tensor(-pca_only_code + pca_only_text - pca_all).to(model.dtype).to(device)
-# print(f"Acts shape: {acts.shape}")

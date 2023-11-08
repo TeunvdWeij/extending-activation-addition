@@ -28,7 +28,7 @@ class Evaluation:
         neg_acts,
     ):
         self.note = note
-        self.version = (version,)
+        self.version = version
         self.total_tokens_per_ic = total_tokens_per_ic
         self.max_seq_length = max_seq_length
         self.chat = chat
@@ -116,8 +116,13 @@ class Evaluation:
         )
         return encoded
     
-    def acts_compatibility_check(acts):
+    def acts_compatibility_check(self, acts_list):
         #TODO: should change to layers with new activation generation
+
+        if len(acts_list) == 0:
+            print("No compatibility checked, acts_list is empty.")
+            return
+        
         to_check = (
             "num_samples", 
             "layer", 
@@ -126,8 +131,7 @@ class Evaluation:
         )
 
         for var in to_check:
-            values = [getattr(act, var) for act in acts]
-            print(values)
+            values = [getattr(act, var) for act in acts_list]
             if not values.count(values[0]) == len(values):
                 raise RuntimeError("Activations do not match up. Maybe generated more activations with the same generation details.")
 
@@ -138,24 +142,24 @@ class Evaluation:
         # some dummy input to get the shape of layer
         self.model.get_logits(torch.tensor([[1]]))
 
-        # all layers have the same shape
-        acts_shape = self.model.get_last_activations(self.layers[0]).shape
+        # get dimensions related to 0th token
+        acts_shape = self.model.get_last_activations(self.layers[0])[0].shape
+        # get shape from (1, 1, hidden_dim) to (1, hidden_dim) 
         random_acts = torch.rand(acts_shape).to(self.dtype).to(self.device)
-        random_acts = normalize(random_acts, p=2, dim =1)
-        print(random_acts.shape, print(random_acts))
+        random_acts = normalize(random_acts, p=2, dim=1)
         return random_acts
 
     def get_acts_path(self, mode):
         # finding the correct file name, bit hacky but is faster than loading many activations
-        path = "data/activations/Llama-2"
-        path += self.model_params
-        path += mode.replace("_", "-")
-        if self.mean:
-            path += "_mean_"
-        else:
-            path += "_no-mean_"
+        path = "data/activations/Llama-2-"
+        path += self.model_params + "/"
+        path += "chat_" if self.chat else "no-chat_"
+        path += mode.replace("_", "-") + "_"
+
+        path += "mean_" if self.mean else "no-mean_"
 
         path_list = glob(path + "v*.pt")
+
         if len(path_list) == 0:
             raise RuntimeError("No activations available. Change variables or generate new activations.")
         elif len(path_list) > 1:
@@ -163,38 +167,51 @@ class Evaluation:
         else:
             return path_list[0]
     
+
+    def get_acts_list(self, acts):
+        """Takes in either self.pos_acts or self.neg_acts"""
+        acts_list = []
+        list_to_check = []
+
+        for mode in acts:
+            if mode == "random":
+                acts_list.append(self.generate_random_acts())
+            else:
+                data = torch.load(self.get_acts_path(mode))
+                list_to_check.append(data)
+                try:
+                    acts_list.append(data.acts)
+                except AttributeError:
+                    acts_list.append(data.tensor)
+    
+        acts_list = [a.to(self.device) for a in acts_list]
+        return acts_list, list_to_check
+
     def set_acts(self):
         assert self.pos_acts or self.neg_acts, "No activations given, set a value for either pos_acts or neg_acts"
         assert self.acts is None, "Activations must be None, they cannot be overwritten."
 
-        pos_acts, neg_acts = [], []
-        list_to_check = []
-        for mode in self.pos_acts:
-            if mode == "random":
-                pos_acts.append(self.set_random_acts())
-            else:
-                data = torch.load(self.get_acts_path(mode))
-                list_to_check.append(data)
-                pos_acts.append(data.acts)
+        pos_acts, to_check_pos = self.get_acts_list(self.pos_acts)
+        neg_acts, to_check_neg = self.get_acts_list(self.neg_acts)
 
-        for mode in self.neg_acts:
-            if mode == "random":
-                neg_acts.append(self.set_random_acts())
-            else:
-                data = torch.load(self.get_acts_path(mode))
-                list_to_check.append(data)
-                neg_acts.append(data.acts)
-
-        self.acts_compatibility_check(list_to_check)
+        self.acts_compatibility_check(to_check_pos + to_check_neg)
 
         if pos_acts:
-            acts = torch.sum(torch.vstack(tuple(pos_acts)), dim=0)
-            if neg_acts:
-                acts -= torch.sum(torch.vstack(tuple(neg_acts)), dim=0)
-        else:
-            acts = -torch.sum(torch.vstack(tuple(neg_acts)), dim=0)
+            for i in pos_acts:
+                print(i.shape, i)
 
-        self.acts = acts
+            pos_acts = torch.vstack(tuple(pos_acts))
+            pos_sum = torch.sum(pos_acts, dim=0)
+        else:
+            pos_sum = torch.tensor((0))
+        
+        if neg_acts:
+            neg_acts = torch.vstack(tuple(neg_acts))
+            neg_sum = torch.sum(neg_acts, dim=0)
+        else:
+            neg_sum = torch.tensor((0))
+ 
+        self.acts = pos_sum - neg_sum
 
     def get_skip_tokens(self, mode="all", skip="skip50", data_type="tokens_int"):
         """Opens the skip tokens json file and returns a tensor"""
@@ -240,6 +257,6 @@ class Evaluation:
         )
 
     def save(self):
-        with open(self.file_path, "w") as f:
+        with open(self.generate_save_path_string(), "w") as f:
             json.dump(self.results, f, indent=2)
             print(f"Written to json file succesfully!")

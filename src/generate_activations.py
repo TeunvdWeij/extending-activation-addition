@@ -35,7 +35,8 @@ def get_activations(acts_obj: ActivationTensor):
         # forward pass to get new activations
         model.get_logits(encoded)
         # get last token's activations as these likely contain most information
-        acts = model.get_last_activations(acts_obj.layer)[:, -1, :].detach().cpu()
+        # TODO: adapt for multiple layers
+        acts = model.get_last_activations(acts_obj.layers[0])[:, -1, :].detach().cpu()
 
         acts_obj.process_new_acts(acts, i)
 
@@ -53,8 +54,7 @@ def arg_parser():
     parser.add_argument("--version", type=str)
 
     parser.add_argument("--num_samples", type=int, default=5000)
-    # change so multiple layers can be used
-    parser.add_argument("--layer", type=int, default=29)
+    parser.add_argument("--layers", nargs="+", type=int, default=[29])
     parser.add_argument("--max_seq_length", type=int, default=4096)
 
     parser.add_argument("--chat", default=True, action=argparse.BooleanOptionalAction)
