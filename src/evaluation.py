@@ -106,12 +106,12 @@ class Evaluation:
         # truncate to context window, pad to longest sequence. detach and to device for gpu memory usage
         encoded = (
             self.model.tokenizer.encode(
-                sample.get("text"),  # type: ignore
+                sample.get("text"),
                 truncation=self.truncation,
                 max_length=self.max_seq_length,
                 return_tensors="pt",
             )
-            .detach()  # type: ignore
+            .detach()
             .to(self.device)
         )
         return encoded
@@ -259,4 +259,4 @@ class Evaluation:
     def save(self):
         with open(self.generate_save_path_string(), "w") as f:
             json.dump(self.results, f, indent=2)
-            print(f"Written to json file succesfully!")
+            print("Written to json file succesfully!")

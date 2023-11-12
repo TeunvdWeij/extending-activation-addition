@@ -1,8 +1,6 @@
 import os
 import torch
 
-from typing import Union
-
 from utils import get_model_name
 
 
@@ -81,11 +79,11 @@ class ActivationTensor:
         if self.mean:
             self.acts = (self.acts * i + new_acts) / (i + 1)
         else:
-            self.acts.append(new_acts)  # type: ignore
+            self.acts.append(new_acts)
 
     def save(self):
         if not self.mean:
-            self.acts = torch.vstack(self.acts)  # type: ignore
+            self.acts = torch.vstack(self.acts)
         try:
             torch.save(self, self.save_path)
             print(f"SUCCESS: Tensor saved with metadata at {self.save_path}")

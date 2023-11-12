@@ -1,11 +1,10 @@
-import os
-import torch
+
 import argparse
 
 from time import perf_counter
 
 from model import Llama2Helper
-from utils import load_pile, get_hf_token, get_model_name
+from utils import load_pile, get_hf_token
 from activation_tensor import ActivationTensor
 
 
@@ -18,14 +17,14 @@ def get_activations(acts_obj: ActivationTensor):
     total_tokens = 0
     start_time = perf_counter()
     for i in range(acts_obj.num_samples):
-        # print progress every ten percent
+        # print progress every ten percent (tqdm lead to errors)
         if i % (int(acts_obj.num_samples * 0.1)) == 0:
             print(
                 f"Iter {i} of {acts_obj.num_samples}  Time passed: {round(perf_counter() -start_time)} sec",
                 flush=True,
             )
         # torch.cuda.empty_cache()
-        sample = next(dataset)["text"]  # type: ignore
+        sample = next(dataset)["text"] 
         encoded = model.tokenizer.encode(
             sample,
             return_tensors="pt",
@@ -40,9 +39,9 @@ def get_activations(acts_obj: ActivationTensor):
 
         acts_obj.process_new_acts(acts, i)
 
-        total_tokens += encoded.numel()  # type: ignore
+        total_tokens += encoded.numel()
 
-    total_time = perf_counter() - start_time
+    acts_obj.total_time = perf_counter() - start_time
 
     acts_obj.save()
 
