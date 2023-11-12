@@ -88,7 +88,7 @@ def main():
         args.mode,
         args.model_params,
         args.chat,
-        args.layer,
+        args.layers,
         args.max_seq_length,
         args.truncation,
         args.mean,
