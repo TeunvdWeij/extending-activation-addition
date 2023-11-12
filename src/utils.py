@@ -3,7 +3,7 @@ import subprocess
 import torch
 
 from torch.nn.functional import log_softmax
-from datasets import load_dataset
+from datasets import load_dataset # type: ignore
 
 
 def get_model_name(params: str, chat: bool):
