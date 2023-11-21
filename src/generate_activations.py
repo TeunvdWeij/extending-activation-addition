@@ -13,11 +13,12 @@ def get_activations(acts_obj: ActivationTensor):
     model = Llama2Helper(
         model_name=acts_obj.model_name, hf_token=get_hf_token(), dtype=acts_obj.dtype
     )
-
+    n_layers = len(model.model.model.layers)
+    acts_obj.set_acts(n_layers)
     total_tokens = 0
     start_time = perf_counter()
     for i in range(acts_obj.num_samples):
-        # print progress every ten percent (tqdm lead to errors)
+        # print progress every ten percent (tqdm leads to errors)
         if i % (int(acts_obj.num_samples * 0.1)) == 0:
             print(
                 f"Iter {i} of {acts_obj.num_samples}  Time passed: {round(perf_counter() -start_time)} sec",
@@ -34,10 +35,13 @@ def get_activations(acts_obj: ActivationTensor):
         # forward pass to get new activations
         model.get_logits(encoded)
         # get last token's activations as these likely contain most information
-        # TODO: adapt for multiple layers
-        acts = model.get_last_activations(acts_obj.layers[0])[:, -1, :].detach().cpu()
-
-        acts_obj.process_new_acts(acts, i)
+        if acts_obj.mean:
+            for layer_idx in range(n_layers):
+                acts = model.get_last_activations(layer_idx)[:, -1, :].detach().cpu()
+                acts_obj.process_new_acts(acts, i, layer_idx)
+        else:
+            acts = model.get_last_activations(acts_obj.layer_idx)[:, -1, :].detach().cpu()
+            acts_obj.process_new_acts(acts, i)
 
         total_tokens += encoded.numel()
 
@@ -53,7 +57,8 @@ def arg_parser():
     parser.add_argument("--version", type=str)
 
     parser.add_argument("--num_samples", type=int, default=5000)
-    parser.add_argument("--layers", nargs="+", type=int, default=[29])
+    # layer_idx is only used when mean is false (with --no-mean flag)
+    parser.add_argument("--layer_idx", type=int, default=29)
     parser.add_argument("--max_seq_length", type=int, default=4096)
 
     parser.add_argument("--chat", default=True, action=argparse.BooleanOptionalAction)
@@ -88,13 +93,12 @@ def main():
         args.mode,
         args.model_params,
         args.chat,
-        args.layers,
+        args.layer_idx,
         args.max_seq_length,
         args.truncation,
         args.mean,
         args.dtype,
     )
-
     print(f"Acts object: {acts_obj.__dict__}")
     get_activations(acts_obj)
 

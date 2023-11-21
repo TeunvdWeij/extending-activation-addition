@@ -15,7 +15,7 @@ class ActivationTensor:
         mode,
         model_params,
         chat,
-        layers,
+        layer_idx,
         max_seq_length,
         truncation,
         mean,
@@ -27,25 +27,28 @@ class ActivationTensor:
         self.mode = mode
         self.model_params = model_params
         self.chat = chat
-        self.layers = layers
+        self.layer_idx = layer_idx
         self.max_seq_length = max_seq_length
         self.truncation = truncation
         self.mean = mean
 
-        if dtype == "float16":
-            self.dtype = torch.float16
-        if dtype == "bfloat16":
-            self.dtype = torch.bfloat16
+        self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float16
+
 
         self.model_name = get_model_name(model_params, chat)
-
-        # either store the mean or save acts in list
-        self.acts = torch.tensor(0) if mean else []
         self.save_path = self.generate_save_path_string()
 
     def __str__(self):
-        return self.__dict__
+        return str(self.__dict__)
         
+    def set_acts(self, layers: int=None):
+        # either store the mean or save acts in list
+        if not self.mean:
+            self.acts = []
+        else:
+            # store the activations for each layer, hidden dim is 4096
+            self.acts = torch.zeros((layers, 4096))
+            
     def check_acts(self, acts):
         """Check whether values in acts are correct."""
         if torch.isinf(acts).any().item():
@@ -62,23 +65,30 @@ class ActivationTensor:
 
     def generate_save_path_string(self):
         folders = f"data/activations/Llama-2-{self.model_params}/"
-        mean_name = "mean" if self.mean else "no_mean"
-        layers_name = f"layers-{'-'.join(str(item) for item in self.layers)}"
+        mean_str = f"mode={str(self.mean)}"
+        if not self.mean:
+            mean_str += f"layer={self.layer_idx}"
+
         save_path = (
-            f"{folders}{self.mode.replace('_', '-')}_{mean_name}_{layers_name}_v{self.version}.pt"
+            f"{folders}mode={self.mode.replace('_', '-')}_{mean_str}_v{self.version}.pt"
         )
-        print(folders)
-        assert os.path.isdir(folders), "Path does not exists."
-        assert not os.path.isfile(
-            save_path
-        ), "File already exists, can't overwrite file."
+        if not os.path.isdir(folders):
+            raise FileNotFoundError("Path does not exist.")
+        if os.path.isfile(save_path):
+            raise FileExistsError("File already exists, can't overwrite file.")
+            
         return save_path
 
-    def process_new_acts(self, new_acts, i):
+    def process_new_acts(self, new_acts, i, layer_idx=None):
+        """
+        new_acts: activations of model of certain layer
+        i: sample index
+        layer_idx: layer index, only needed when mean is True
+        """
         self.check_acts(new_acts)
 
         if self.mean:
-            self.acts = (self.acts * i + new_acts) / (i + 1)
+            self.acts[layer_idx] = (self.acts[layer_idx] * i + new_acts) / (i + 1)
         else:
             self.acts.append(new_acts)
 
