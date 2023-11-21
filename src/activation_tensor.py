@@ -33,22 +33,20 @@ class ActivationTensor:
         self.mean = mean
 
         self.dtype = torch.bfloat16 if dtype == "bfloat16" else torch.float16
-
-
         self.model_name = get_model_name(model_params, chat)
         self.save_path = self.generate_save_path_string()
 
     def __str__(self):
         return str(self.__dict__)
-        
-    def set_acts(self, layers: int=None):
+
+    def set_acts(self, layers: int = None):
         # either store the mean or save acts in list
         if not self.mean:
             self.acts = []
         else:
             # store the activations for each layer, hidden dim is 4096
             self.acts = torch.zeros((layers, 4096))
-            
+
     def check_acts(self, acts):
         """Check whether values in acts are correct."""
         if torch.isinf(acts).any().item():
@@ -76,7 +74,7 @@ class ActivationTensor:
             raise FileNotFoundError("Path does not exist.")
         if os.path.isfile(save_path):
             raise FileExistsError("File already exists, can't overwrite file.")
-            
+
         return save_path
 
     def process_new_acts(self, new_acts, i, layer_idx=None):

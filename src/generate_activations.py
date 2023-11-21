@@ -1,4 +1,3 @@
-
 import argparse
 
 from time import perf_counter
@@ -25,7 +24,7 @@ def get_activations(acts_obj: ActivationTensor):
                 flush=True,
             )
         # torch.cuda.empty_cache()
-        sample = next(dataset)["text"] 
+        sample = next(dataset)["text"]
         encoded = model.tokenizer.encode(
             sample,
             return_tensors="pt",
@@ -40,7 +39,9 @@ def get_activations(acts_obj: ActivationTensor):
                 acts = model.get_last_activations(layer_idx)[:, -1, :].detach().cpu()
                 acts_obj.process_new_acts(acts, i, layer_idx)
         else:
-            acts = model.get_last_activations(acts_obj.layer_idx)[:, -1, :].detach().cpu()
+            acts = (
+                model.get_last_activations(acts_obj.layer_idx)[:, -1, :].detach().cpu()
+            )
             acts_obj.process_new_acts(acts, i)
 
         total_tokens += encoded.numel()
