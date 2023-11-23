@@ -91,10 +91,11 @@ class Evaluation:
             "max_seq_length": self.max_seq_length,
             "layers": self.layers,
             "injection_coefficients": self.ics,
-            # for json serialization
-            "dtype": str(self.dtype),
+            "dtype": str(self.dtype),  # for json serialization
             "truncation": self.truncation,
             "mean": self.mean,
+            "pos_acts": self.pos_acts,
+            "neg_acts": self.neg_acts,
         }
         return meta_data
 
@@ -153,6 +154,7 @@ class Evaluation:
                 )
 
     def generate_random_acts(self):
+        print("Warning, random activations have not been thoroughly tested.")
         if self.model_params == "7b":
             if self.mean:
                 random_acts = torch.rand((32, 4096)).to(self.dtype).to(self.device)
@@ -166,7 +168,6 @@ class Evaluation:
         else:
             raise ValueError(("Random acts not implemented for this model."))
 
-            
         assert self.acts is None, "Acts are not None, cannot overwwrite."
 
     def get_acts_path(self, mode):
@@ -223,21 +224,20 @@ class Evaluation:
 
         if pos_acts:
             pos_sum = einops.reduce(
-                pos_acts, 
-                "mode layers model_dim -> layers model_dim",
-                "sum")
+                pos_acts, "mode layers model_dim -> layers model_dim", "sum"
+            )
         else:
             pos_sum = torch.tensor((0))
 
         if neg_acts:
-                neg_sum = einops.reduce(
-                neg_acts, 
-                "mode layers model_dim -> layers model_dim",
-                "sum")
+            neg_sum = einops.reduce(
+                neg_acts, "mode layers model_dim -> layers model_dim", "sum"
+            )
         else:
             neg_sum = torch.tensor((0))
 
-        self.acts = pos_sum - neg_sum
+        # set acts after normalizing
+        self.acts = normalize(pos_sum - neg_sum, dim=-1, p=2)
 
     def get_skip_tokens(self, mode="all", skip="skip50", data_type="tokens_int"):
         """Opens the skip tokens json file and returns a tensor"""

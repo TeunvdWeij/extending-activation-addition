@@ -1,17 +1,13 @@
 
-import datasets
-import transformers
-
 
 import torch
 import itertools
 import einops
 from time import perf_counter
 from datasets import load_dataset
-from torch.nn.functional import normalize
 
 from model import Llama2Helper
-from utils import load_pile, get_subset_from_dataset, get_hf_token
+from utils import get_hf_token
 
 dataset = load_dataset("Anthropic/model-written-evals")
 
@@ -45,9 +41,9 @@ acts_list = []
 # layers = [25, 26, 27, 28]
 layers = [25, 25, 25, 25]
 for i, l in zip(inputs, layers):
-    encoded = model.tokenizer(
-        i, truncation=True, max_length=4096, return_tensors="pt"
-    )["input_ids"].to(device)
+    encoded = model.tokenizer(i, truncation=True, max_length=4096, return_tensors="pt")[
+        "input_ids"
+    ].to(device)
     model.get_logits(encoded)
     acts = model.get_last_activations(l)[:, -1, :]
     acts_list.append(acts)
@@ -55,7 +51,7 @@ for i, l in zip(inputs, layers):
 print("Normal Performance:")
 model.reset_all()
 for _ in range(10):
-    print(model.generate_text(q, do_sample=True)[len(q):])
+    print(model.generate_text(q, do_sample=True)[len(q) :])
 
 print("\n\n_______________")
 combinations = itertools.combinations(acts_list, 2)
@@ -70,13 +66,13 @@ mean_acts.shape
 
 model.reset_all()
 for acts, l in zip(acts_list, layers):
-    model.set_add_activations(l, -0.5*mean_acts)
+    model.set_add_activations(l, -0.5 * mean_acts)
     break
 
 print("Normal performance")
 
 for _ in range(10):
-    print(model.generate_text(q, do_sample=True)[len(q):])
+    print(model.generate_text(q, do_sample=True)[len(q) :])
 
 # repo = "codeparrot/github-code-clean"
 repo = "codeparrot/codeparrot-clean"
@@ -94,13 +90,13 @@ start_time = perf_counter()
 samples = [next(ds) for _ in range(100)]
 model.reset_all()
 for i, sample in enumerate(samples):
-#     model.set_add_activations()
+    #     model.set_add_activations()
 
     torch.cuda.empty_cache()
     encoded = model.tokenizer(
-        sample['content'], truncation=True, max_length=2048, return_tensors="pt"
+        sample["content"], truncation=True, max_length=2048, return_tensors="pt"
     )["input_ids"].to(device)
-#     print(f"Iteration: {i}")
+    #     print(f"Iteration: {i}")
     # print(encoded.shape)
 
     with torch.no_grad():
@@ -115,10 +111,12 @@ for i, sample in enumerate(samples):
 
     if i >= 100:
         break
-# 
+#
 print(f"total time: {perf_counter() - start_time}")
 print(f"\nThis is top1_acc: {top1_accs}")
-print(f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}")
+print(
+    f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}"
+)
 
 
 print("\n\n_______________")
@@ -129,16 +127,16 @@ start_time = perf_counter()
 samples = [next(ds) for _ in range(100)]
 model.reset_all()
 for acts, l in zip(acts_list, layers):
-    model.set_add_activations(l, -0.5*mean_acts)
+    model.set_add_activations(l, -0.5 * mean_acts)
 
 for i, sample in enumerate(samples):
-#     model.set_add_activations()
+    #     model.set_add_activations()
 
     torch.cuda.empty_cache()
     encoded = model.tokenizer(
-        sample['content'], truncation=True, max_length=2048, return_tensors="pt"
+        sample["content"], truncation=True, max_length=2048, return_tensors="pt"
     )["input_ids"].to(device)
-#     print(f"Iteration: {i}")
+    #     print(f"Iteration: {i}")
     # print(encoded.shape)
 
     with torch.no_grad():
@@ -153,10 +151,12 @@ for i, sample in enumerate(samples):
 
     if i >= 100:
         break
-# 
+#
 print(f"total time: {perf_counter() - start_time}")
 print(f"\nThis is top1_acc: {top1_accs}")
-print(f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}")
+print(
+    f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}"
+)
 
 
 # layer = 29
@@ -327,4 +327,3 @@ print(f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs
 # #         break
 
 # s
-

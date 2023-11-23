@@ -64,13 +64,16 @@ class ActivationTensor:
     def generate_save_path_string(self):
         folders = f"data/activations/Llama-2-{self.model_params}/"
         folders += "mean/" if self.mean else "no_mean/"
-        
-        if not self.mean:
-            mean_str += f"layer={self.layer_idx}"
 
-        save_path = (
-            f"{folders}mode={self.mode.replace('_', '-')}_{mean_str}_v{self.version}.pt"
-        )
+        if not self.mean:
+            mean_str = f"layer={self.layer_idx}"
+            save_path = (
+                f"{folders}mode={self.mode.replace('_', '-')}_{mean_str}_v{self.version}.pt"
+            )
+        else:
+            save_path = (
+                f"{folders}mode={self.mode.replace('_', '-')}_v{self.version}.pt"
+            )
         if not os.path.isdir(folders):
             raise FileNotFoundError("Path does not exist.")
         if os.path.isfile(save_path):

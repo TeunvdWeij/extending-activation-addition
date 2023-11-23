@@ -26,7 +26,6 @@ def evaluate(eval_obj: Evaluation):
                 # this will only be one layer if mean is false, see evaluation.py
                 model.set_add_activations(layer, ic * eval_obj.acts[layer])
 
-
             # init list for storing results for this injection coefficient
             ic_results = []
             analyzed_tokens = 0
