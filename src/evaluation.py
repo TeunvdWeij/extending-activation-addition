@@ -1,7 +1,8 @@
-import torch
 import json
 import time
 import os
+import torch
+import einops
 
 from glob import glob
 from torch.nn.functional import normalize
@@ -35,15 +36,31 @@ class Evaluation:
         self.truncation = truncation
         self.mean = mean
         self.ics = ics
+
+        if not self.mean and len(layers) > 1:
+            raise ValueError("If mean is False, only one layer can be used")
         self.layers = layers
         self.model_params = model_params
         self.pos_acts = pos_acts
         self.neg_acts = neg_acts
+        self.result_keys = [
+            "top1_acc",
+            "top10_acc",
+            "skip50_top1_acc",
+            "skip50_top10_acc",
+            "total_encoded_tokens",
+            "total_tokens_with_skip",
+            "total_time_in_sec",
+        ]
+
+        self.save_path = self.generate_save_path_string()
 
         if dtype == "float16":
             self.dtype = torch.float16
-        if dtype == "bfloat16":
+        elif dtype == "bfloat16":
             self.dtype = torch.bfloat16
+        else:
+            raise ValueError("Unimplemented dtype.")
 
         self.model_name = get_model_name(model_params, chat)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -56,7 +73,7 @@ class Evaluation:
 
     def __str__(self) -> str:
         return str(self.__dict__)
-    
+
     def get_model(self):
         model = Llama2Helper(
             model_name=self.model_name, hf_token=get_hf_token(), dtype=self.dtype
@@ -74,9 +91,9 @@ class Evaluation:
             "max_seq_length": self.max_seq_length,
             "layers": self.layers,
             "injection_coefficients": self.ics,
-            "dtype": self.dtype,
+            # for json serialization
+            "dtype": str(self.dtype),
             "truncation": self.truncation,
-            # TODO: this should be different
             "mean": self.mean,
         }
         return meta_data
@@ -95,8 +112,7 @@ class Evaluation:
         return ic_res
 
     def generate_save_path_string(self):
-        save_path = f"results/Llama-2-{self.model_params}/v_{self.version}.json"
-        assert os.path.isdir(save_path), "Directory does not exists."
+        save_path = f"results/v_{self.version}.json"
         assert not os.path.isfile(
             save_path
         ), "File already exists, can't overwrite file."
@@ -115,58 +131,63 @@ class Evaluation:
             .to(self.device)
         )
         return encoded
-    
-    def acts_compatibility_check(self, acts_list):
-        #TODO: should change to layers with new activation generation
 
+    def acts_compatibility_check(self, acts_list):
         if len(acts_list) == 0:
             print("No compatibility checked, acts_list is empty.")
             return
-        
-        to_check = (
-            "num_samples", 
-            "layer", 
+
+        to_check = [
+            "num_samples",
             "max_seq_length",
             "truncation",
-        )
+        ]
+        if not self.mean:
+            to_check.append("layers")
 
         for var in to_check:
             values = [getattr(act, var) for act in acts_list]
             if not values.count(values[0]) == len(values):
-                raise RuntimeError("Activations do not match up. Maybe generated more activations with the same generation details.")
-
+                raise RuntimeError(
+                    "Activations do not match up. Maybe generated more activations with the same generation details."
+                )
 
     def generate_random_acts(self):
+        if self.model_params == "7b":
+            if self.mean:
+                random_acts = torch.rand((32, 4096)).to(self.dtype).to(self.device)
+                random_acts = normalize(random_acts, p=2, dim=1)
+                return random_acts
+            else:
+                random_acts = torch.rand((1, 4096)).to(self.dtype).to(self.device)
+                random_acts = normalize(random_acts, p=2, dim=1)
+                return random_acts
+
+        else:
+            raise ValueError(("Random acts not implemented for this model."))
+
+            
         assert self.acts is None, "Acts are not None, cannot overwwrite."
-
-        # some dummy input to get the shape of layer
-        self.model.get_logits(torch.tensor([[1]]))
-
-        # get dimensions related to 0th token
-        acts_shape = self.model.get_last_activations(self.layers[0])[0].shape
-        # get shape from (1, 1, hidden_dim) to (1, hidden_dim) 
-        random_acts = torch.rand(acts_shape).to(self.dtype).to(self.device)
-        random_acts = normalize(random_acts, p=2, dim=1)
-        return random_acts
 
     def get_acts_path(self, mode):
         # finding the correct file name, bit hacky but is faster than loading many activations
         path = "data/activations/Llama-2-"
         path += self.model_params + "/"
-        path += "chat_" if self.chat else "no-chat_"
-        path += mode.replace("_", "-") + "_"
+        path += "mean/" if self.mean else "no-mean_/"
+        path += f"mode={mode.replace('_', '-')}_"
 
-        path += "mean_" if self.mean else "no-mean_"
-
+        # path += f"layers-{'-'.join(str(item) for item in self.layers)}_"
+        print(f"The base path of the actication for {mode}: {path}")
         path_list = glob(path + "v*.pt")
 
         if len(path_list) == 0:
-            raise RuntimeError("No activations available. Change variables or generate new activations.")
+            raise RuntimeError(
+                "No activations available. Change variables or generate new activations."
+            )
         elif len(path_list) > 1:
             raise RuntimeError("Too many options, please clean activations.")
         else:
             return path_list[0]
-    
 
     def get_acts_list(self, acts):
         """Takes in either self.pos_acts or self.neg_acts"""
@@ -183,13 +204,17 @@ class Evaluation:
                     acts_list.append(data.acts)
                 except AttributeError:
                     acts_list.append(data.tensor)
-    
-        acts_list = [a.to(self.device) for a in acts_list]
+
+        acts_list = [a.to(self.device).to(self.dtype) for a in acts_list]
         return acts_list, list_to_check
 
     def set_acts(self):
-        assert self.pos_acts or self.neg_acts, "No activations given, set a value for either pos_acts or neg_acts"
-        assert self.acts is None, "Activations must be None, they cannot be overwritten."
+        assert (
+            self.pos_acts or self.neg_acts
+        ), "No activations given, set a value for either pos_acts or neg_acts"
+        assert (
+            self.acts is None
+        ), "Activations must be None, they cannot be overwritten."
 
         pos_acts, to_check_pos = self.get_acts_list(self.pos_acts)
         neg_acts, to_check_neg = self.get_acts_list(self.neg_acts)
@@ -197,20 +222,21 @@ class Evaluation:
         self.acts_compatibility_check(to_check_pos + to_check_neg)
 
         if pos_acts:
-            for i in pos_acts:
-                print(i.shape, i)
-
-            pos_acts = torch.vstack(tuple(pos_acts))
-            pos_sum = torch.sum(pos_acts, dim=0)
+            pos_sum = einops.reduce(
+                pos_acts, 
+                "mode layers model_dim -> layers model_dim",
+                "sum")
         else:
             pos_sum = torch.tensor((0))
-        
+
         if neg_acts:
-            neg_acts = torch.vstack(tuple(neg_acts))
-            neg_sum = torch.sum(neg_acts, dim=0)
+                neg_sum = einops.reduce(
+                neg_acts, 
+                "mode layers model_dim -> layers model_dim",
+                "sum")
         else:
             neg_sum = torch.tensor((0))
- 
+
         self.acts = pos_sum - neg_sum
 
     def get_skip_tokens(self, mode="all", skip="skip50", data_type="tokens_int"):
@@ -257,6 +283,6 @@ class Evaluation:
         )
 
     def save(self):
-        with open(self.generate_save_path_string(), "w") as f:
+        with open(self.save_path, "w") as f:
             json.dump(self.results, f, indent=2)
             print("Written to json file succesfully!")

@@ -1,6 +1,8 @@
 import torch
 import time
 import argparse
+import numpy as np
+
 
 from evaluation import Evaluation
 
@@ -21,9 +23,11 @@ def evaluate(eval_obj: Evaluation):
             # clear and set the activations to be used in the forward pass
             model.reset_all()
             for layer in eval_obj.layers:
-                model.set_add_activations(layer, ic * eval_obj.acts)
+                # this will only be one layer if mean is false, see evaluation.py
+                model.set_add_activations(layer, ic * eval_obj.acts[layer])
 
-            # init dict for this injection coefficient
+
+            # init list for storing results for this injection coefficient
             ic_results = []
             analyzed_tokens = 0
 
@@ -38,13 +42,23 @@ def evaluate(eval_obj: Evaluation):
                 predictions = model.get_logits(encoded).detach().to(model.device)
 
                 sample_results = eval_obj.process_predictions(
-                    encoded, predictions, start_time, skip_tokens,
+                    encoded,
+                    predictions,
+                    start_time,
+                    skip_tokens,
                 )
+
                 ic_results.append(sample_results)
 
                 analyzed_tokens += encoded.numel()
 
-            eval_obj.results[mode][f"injection_coefficients_{ic}"] = ic_results
+            # TODO: switch to numpy for slicing, but this can be done better
+            ic_results = np.array(ic_results)
+            ic_results_dict = {}
+            for i, key in enumerate(eval_obj.result_keys):
+                # to list for json serialization
+                ic_results_dict[key] = list(ic_results[:, i])
+            eval_obj.results[mode][f"injection_coefficients_{ic}"] = ic_results_dict
 
     eval_obj.save()
 
@@ -86,10 +100,18 @@ def arg_parser():
         "--dtype", type=str, choices=["float16", "bfloat16"], default="bfloat16"
     )
     parser.add_argument(
-        "--pos_acts", nargs="+", type=str, choices=["all", "only_text", "only_code", "random"], default=""
-    )    
+        "--pos_acts",
+        nargs="+",
+        type=str,
+        choices=["all", "only_text", "only_code", "random"],
+        default="",
+    )
     parser.add_argument(
-        "--neg_acts", nargs="+", type=str, choices=["all", "only_text", "only_code", "random"], default=""
+        "--neg_acts",
+        nargs="+",
+        type=str,
+        choices=["all", "only_text", "only_code", "random"],
+        default="",
     )
     return parser.parse_args()
 
