@@ -10,8 +10,8 @@ from time import perf_counter
 from datasets import load_dataset
 from torch.nn.functional import normalize
 
-from src.model import Llama2Helper
-from src.utils import load_pile, get_subset_from_dataset, get_hf_token
+from model import Llama2Helper
+from utils import load_pile, get_subset_from_dataset, get_hf_token
 
 dataset = load_dataset("Anthropic/model-written-evals")
 
@@ -38,7 +38,8 @@ print (count)
 """
 
 # inputs = ["python count", "python def", "python for", "python in"]
-inputs = ["count", "def", "for", "in"]
+# inputs = ["count", "def", "for", "in"]
+inputs = ["python", "Python"]
 
 acts_list = []
 # layers = [25, 26, 27, 28]
@@ -100,7 +101,7 @@ for i, sample in enumerate(samples):
         sample['content'], truncation=True, max_length=2048, return_tensors="pt"
     )["input_ids"].to(device)
 #     print(f"Iteration: {i}")
-    print(encoded.shape)
+    # print(encoded.shape)
 
     with torch.no_grad():
         predictions = model.get_logits(encoded).detach().to("cuda")
@@ -119,6 +120,43 @@ print(f"total time: {perf_counter() - start_time}")
 print(f"\nThis is top1_acc: {top1_accs}")
 print(f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}")
 
+
+print("\n\n_______________")
+print("Accuracy with activations")
+
+top1_accs = []
+start_time = perf_counter()
+samples = [next(ds) for _ in range(100)]
+model.reset_all()
+for acts, l in zip(acts_list, layers):
+    model.set_add_activations(l, -0.5*mean_acts)
+
+for i, sample in enumerate(samples):
+#     model.set_add_activations()
+
+    torch.cuda.empty_cache()
+    encoded = model.tokenizer(
+        sample['content'], truncation=True, max_length=2048, return_tensors="pt"
+    )["input_ids"].to(device)
+#     print(f"Iteration: {i}")
+    # print(encoded.shape)
+
+    with torch.no_grad():
+        predictions = model.get_logits(encoded).detach().to("cuda")
+
+    # align predictions: the first token is not predicted by the model and the last prediction is not encoded
+    encoded = encoded[:, 1:]
+    predictions = predictions[:, :-1]
+
+    top1_preds = torch.topk(predictions, k=1, dim=-1).indices.squeeze(-1)
+    top1_accs.append((torch.sum(top1_preds == encoded) / predictions.shape[1]).item())
+
+    if i >= 100:
+        break
+# 
+print(f"total time: {perf_counter() - start_time}")
+print(f"\nThis is top1_acc: {top1_accs}")
+print(f"\nincorrect Average accuracy in %: {round(sum(top1_accs) / len(top1_accs) * 100, 2)}")
 
 
 # layer = 29
