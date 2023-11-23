@@ -63,7 +63,8 @@ class ActivationTensor:
 
     def generate_save_path_string(self):
         folders = f"data/activations/Llama-2-{self.model_params}/"
-        mean_str = f"mean={str(self.mean)}"
+        folders += "mean/" if self.mean else "no_mean/"
+        
         if not self.mean:
             mean_str += f"layer={self.layer_idx}"
 
