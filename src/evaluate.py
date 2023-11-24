@@ -86,7 +86,7 @@ def arg_parser():
     parser.add_argument(
         "--ics",
         nargs="+",
-        type=int,
+        type=float,
         default=[0, 20, 40, 75, 100, 150, 200, 250, 300, 400, 500],
     )
     parser.add_argument("--layers", nargs="+", type=int, default=[29])
