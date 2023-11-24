@@ -14,4 +14,4 @@ module load 2022
 module load Python/3.10.4-GCCcore-11.3.0
 
 source output_control_venv/bin/activate
-python src/generate_activations.py --mean --mode "only_text" --version "2.20" --note "new layer mean" --layers 21
+python src/generate_activations.py --mean --mode "only_python" --version "2.24" --note "only_python mode on clean code parrot"

@@ -3,12 +3,12 @@ import argparse
 from time import perf_counter
 
 from model import Llama2Helper
-from utils import load_pile, get_hf_token
+from utils import load_data, get_hf_token
 from activation_tensor import ActivationTensor
 
 
 def get_activations(acts_obj: ActivationTensor):
-    dataset = load_pile(mode=acts_obj.mode, shuffle=True, split="train", iterable=True)
+    dataset = load_data(mode=acts_obj.mode, shuffle=True, split="train", iterable=True)
     model = Llama2Helper(
         model_name=acts_obj.model_name, hf_token=get_hf_token(), dtype=acts_obj.dtype
     )
@@ -24,7 +24,9 @@ def get_activations(acts_obj: ActivationTensor):
                 flush=True,
             )
         # torch.cuda.empty_cache()
-        sample = next(dataset)["text"]
+        key = "content" if acts_obj.mode == "only_python" else "text" 
+
+        sample = next(dataset)[key]
         encoded = model.tokenizer.encode(
             sample,
             return_tensors="pt",
@@ -55,8 +57,14 @@ def arg_parser():
     parser = argparse.ArgumentParser()
     # required params
     parser.add_argument("--note", type=str)
-    parser.add_argument("--version", type=str)
 
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["only_code", "only_text", "all", "only_python"],
+    )
+
+    parser.add_argument("--version", type=str)
     parser.add_argument("--num_samples", type=int, default=5000)
     # layer_idx is only used when mean is false (with --no-mean flag)
     parser.add_argument("--layer_idx", type=int, default=29)
@@ -67,13 +75,6 @@ def arg_parser():
         "--truncation", default=True, action=argparse.BooleanOptionalAction
     )
     parser.add_argument("--mean", default=True, action=argparse.BooleanOptionalAction)
-
-    parser.add_argument(
-        "--mode",
-        type=str,
-        choices=["only_code", "only_text", "all"],
-        default="only_code",
-    )
     parser.add_argument(
         "--model_params", type=str, choices=["7b", "13b", "70b"], default="7b"
     )
