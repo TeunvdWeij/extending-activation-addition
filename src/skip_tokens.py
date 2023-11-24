@@ -4,7 +4,7 @@ import json
 import os
 
 from model import init_tokenizer
-from utils import load_pile, get_subset_from_dataset, get_hf_token
+from utils import load_data, get_subset_from_dataset, get_hf_token
 
 # first check if no file is being overwritten
 file_path = "data/skip_tokens.json"
@@ -18,8 +18,8 @@ num_samples = 10_000
 
 
 # for with and without code
-for mode in ("all", "only_text", "only_code"):
-    dataset = load_pile(split="train", mode=mode)
+for mode in ("all", "only_text", "only_code", "only_python"):
+    dataset = load_data(split="train", mode=mode)
     ds_subset = get_subset_from_dataset(dataset, num_samples=num_samples)
 
     # encode all the text and make array 1D
