@@ -113,7 +113,7 @@ def acc(t1, t2, f=None, top1=True):
 
 
 # adapted from https://github.com/pesvut/separability/blob/b435310c5728dcfacb0312799d98ba6e7146507c/src/separability/texts.py#L3
-def load_pile(split: str, mode: str, shuffle: bool = True, iterable: bool = True):
+def load_data(split: str, mode: str, shuffle: bool = True, iterable: bool = True):
     """
     Load pile given certain selection.
 
@@ -123,8 +123,12 @@ def load_pile(split: str, mode: str, shuffle: bool = True, iterable: bool = True
     :return dataset: The requested dataset based on the selection
     """
 
-    assert mode in ("all", "only_text", "only_code")
-    dataset = load_dataset("monology/pile-uncopyrighted", streaming=True, split=split)
+    assert mode in ("all", "only_text", "only_code", "only_python")
+
+    if mode == "only_python":
+        dataset = load_dataset("codeparrot/codeparrot-clean", streaming=True, split=split)
+    else:
+        dataset = load_dataset("monology/pile-uncopyrighted", streaming=True, split=split)
 
     # with this shuffle seed I ensure that the dataset is the same across runs
     if shuffle:
@@ -141,8 +145,8 @@ def load_pile(split: str, mode: str, shuffle: bool = True, iterable: bool = True
     return iter(dataset) if iterable else dataset
 
 
-# NOTE: currently unused
-def get_subset_from_dataset(dataset, num_samples):
+# NOTE: currently only used in skip_tokens.py
+def get_subset_from_dataset(dataset, num_samples, mode):
     """
     Get a specific number of samples from the  dataset.
 
@@ -151,4 +155,8 @@ def get_subset_from_dataset(dataset, num_samples):
 
     :return sampled_text: A list of 'num_samples' text strings from the dataset
     """
-    return [next(dataset)["text"] for _ in range(num_samples)]
+    if mode == "only_python":
+        key = "content"
+    else:
+        key = "text"
+    return [next(dataset)[key] for _ in range(num_samples)]
