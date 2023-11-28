@@ -35,7 +35,13 @@ class Evaluation:
         self.chat = chat
         self.truncation = truncation
         self.mean = mean
-        self.ics = ics
+        # self.ics = ics
+        self.ics = [
+    0., 0.1, 0.2, 0.3, 0.5, 0.8, 1., 1.25, 
+    1.5, 2, 3, 5, 8, 10, 15, 20, 25, 30, 35,
+    40, 45, 50, 60, 70, 80, 100, 125, 150, 175, 
+    200, 225, 250, 300, 400, 500, 1000, 2000
+]
 
         if not self.mean and len(layers) > 1:
             raise ValueError("If mean is False, only one layer can be used")
@@ -119,11 +125,13 @@ class Evaluation:
         ), "File already exists, can't overwrite file."
         return save_path
 
-    def encode(self, sample):
+    def encode(self, sample, mode):
         # truncate to context window, pad to longest sequence. detach and to device for gpu memory usage
+        key = "content" if acts_obj.mode == "only_python" else "text" 
+        
         encoded = (
             self.model.tokenizer.encode(
-                sample.get("text"),
+                sample.get(key),
                 truncation=self.truncation,
                 max_length=self.max_seq_length,
                 return_tensors="pt",
@@ -201,10 +209,7 @@ class Evaluation:
             else:
                 data = torch.load(self.get_acts_path(mode))
                 list_to_check.append(data)
-                try:
-                    acts_list.append(data.acts)
-                except AttributeError:
-                    acts_list.append(data.tensor)
+                acts_list.append(data.acts)
 
         acts_list = [a.to(self.device).to(self.dtype) for a in acts_list]
         return acts_list, list_to_check

@@ -6,7 +6,7 @@ import numpy as np
 
 from evaluation import Evaluation
 
-from utils import load_pile
+from utils import load_data
 
 
 def evaluate(eval_obj: Evaluation):
@@ -16,7 +16,8 @@ def evaluate(eval_obj: Evaluation):
     for mode in eval_obj.modes:
         eval_obj.results[mode] = {}
         skip_tokens = eval_obj.get_skip_tokens(mode)
-        dataset = load_pile(split="validation", mode=mode, iterable=True)
+
+        dataset = load_data(split="validation", mode=mode, iterable=True)
 
         for ic in eval_obj.ics:
             print(f"Mode: {mode}.   Injection Coefficient: {ic}", flush=True)
@@ -37,7 +38,7 @@ def evaluate(eval_obj: Evaluation):
                     break
                 # can use this if OOM memory issues happen, probably slows code down a bit
                 torch.cuda.empty_cache()
-                encoded = eval_obj.encode(sample)
+                encoded = eval_obj.encode(sample, mode)
                 predictions = model.get_logits(encoded).detach().to(model.device)
 
                 sample_results = eval_obj.process_predictions(
@@ -102,15 +103,22 @@ def arg_parser():
         "--pos_acts",
         nargs="+",
         type=str,
-        choices=["all", "only_text", "only_code", "random"],
+        choices=["all", "only_text", "only_code", "random", "only_python"],
         default="",
     )
     parser.add_argument(
         "--neg_acts",
         nargs="+",
         type=str,
-        choices=["all", "only_text", "only_code", "random"],
+        choices=["all", "only_text", "only_code", "random", "only_python"],
         default="",
+    )
+    parser.add_argument(
+        "--modes",
+        nargs="+",
+        type=str,
+        choices=["all", "only_text", "only_code", "only_python"],
+        default=["only_text", "only_code"]
     )
     return parser.parse_args()
 
