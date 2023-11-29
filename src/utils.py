@@ -126,9 +126,13 @@ def load_data(split: str, mode: str, shuffle: bool = True, iterable: bool = True
     assert mode in ("all", "only_text", "only_code", "only_python")
 
     if mode == "only_python":
-        dataset = load_dataset("codeparrot/codeparrot-clean", streaming=True, split=split)
+        dataset = load_dataset(
+            "codeparrot/codeparrot-clean", streaming=True, split=split
+        )
     else:
-        dataset = load_dataset("monology/pile-uncopyrighted", streaming=True, split=split)
+        dataset = load_dataset(
+            "monology/pile-uncopyrighted", streaming=True, split=split
+        )
 
     # with this shuffle seed I ensure that the dataset is the same across runs
     if shuffle:

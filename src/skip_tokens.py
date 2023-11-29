@@ -20,7 +20,7 @@ num_samples = 10_000
 # for with and without code
 for mode in ("all", "only_text", "only_code", "only_python"):
     dataset = load_data(split="train", mode=mode)
-    ds_subset = get_subset_from_dataset(dataset, num_samples=num_samples)
+    ds_subset = get_subset_from_dataset(dataset, num_samples=num_samples, mode=mode)
 
     # encode all the text and make array 1D
     encoded = tokenizer(ds_subset, return_tensors="np")
