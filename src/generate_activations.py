@@ -24,7 +24,7 @@ def get_activations(acts_obj: ActivationTensor):
                 flush=True,
             )
         # torch.cuda.empty_cache()
-        key = "content" if acts_obj.mode == "only_python" else "text" 
+        key = "content" if acts_obj.mode == "only_python" else "text"
 
         sample = next(dataset)[key]
         encoded = model.tokenizer.encode(

@@ -124,11 +124,15 @@ def load_data(split: str, mode: str, shuffle: bool = True, iterable: bool = True
     """
 
     assert mode in ("all", "only_text", "only_code", "only_python")
+    assert split in ("train", "validation"), "new split type not implemented."
 
     if mode == "only_python":
-        dataset = load_dataset(
-            "codeparrot/codeparrot-clean", streaming=True, split=split
-        )
+        # this implementation is correct, the datasets are just weirdly structured
+        dataset_name = "codeparrot/codeparrot-clean"
+        if split == "validation":
+            dataset_name += "-valid"
+        print(f"dataset_name{dataset_name}")
+        dataset = load_dataset(dataset_name, streaming=True, split="train")
     else:
         dataset = load_dataset(
             "monology/pile-uncopyrighted", streaming=True, split=split
@@ -149,7 +153,6 @@ def load_data(split: str, mode: str, shuffle: bool = True, iterable: bool = True
     return iter(dataset) if iterable else dataset
 
 
-# NOTE: currently only used in skip_tokens.py
 def get_subset_from_dataset(dataset, num_samples, mode):
     """
     Get a specific number of samples from the  dataset.

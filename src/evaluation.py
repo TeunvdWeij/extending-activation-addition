@@ -21,12 +21,13 @@ class Evaluation:
         chat,
         truncation,
         mean,
-        ics,
+        # ics,
         layers,
         model_params,
         dtype,
         pos_acts,
         neg_acts,
+        modes,
     ):
         self.note = note
         self.version = version
@@ -36,12 +37,6 @@ class Evaluation:
         self.truncation = truncation
         self.mean = mean
         # self.ics = ics
-        self.ics = [
-    0., 0.1, 0.2, 0.3, 0.5, 0.8, 1., 1.25, 
-    1.5, 2, 3, 5, 8, 10, 15, 20, 25, 30, 35,
-    40, 45, 50, 60, 70, 80, 100, 125, 150, 175, 
-    200, 225, 250, 300, 400, 500, 1000, 2000
-]
 
         if not self.mean and len(layers) > 1:
             raise ValueError("If mean is False, only one layer can be used")
@@ -70,12 +65,13 @@ class Evaluation:
 
         self.model_name = get_model_name(model_params, chat)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-        self.modes = ("only_text", "only_code")
+        self.ics = torch.logspace(
+            start=0, end=4, base=10, steps=50, dtype=float, device=self.device
+        )
+        self.modes = modes
 
         self.acts = None
         self.results = {}
-        self.results["meta"] = self.get_meta_info()
 
     def __str__(self) -> str:
         return str(self.__dict__)
@@ -88,6 +84,9 @@ class Evaluation:
         self.model = model
         return model
 
+    def set_used_ics(self, used_ics):
+        self.used_ics = used_ics
+
     def get_meta_info(self):
         # Initialize result metadata.
         meta_data = {
@@ -96,12 +95,13 @@ class Evaluation:
             "total_tokens_per_ic": self.total_tokens_per_ic,
             "max_seq_length": self.max_seq_length,
             "layers": self.layers,
-            "injection_coefficients": self.ics,
+            # "injection_coefficients": self.used_ics,
             "dtype": str(self.dtype),  # for json serialization
             "truncation": self.truncation,
             "mean": self.mean,
             "pos_acts": self.pos_acts,
             "neg_acts": self.neg_acts,
+            "used_ics": self.used_ics
         }
         return meta_data
 
@@ -127,8 +127,8 @@ class Evaluation:
 
     def encode(self, sample, mode):
         # truncate to context window, pad to longest sequence. detach and to device for gpu memory usage
-        key = "content" if acts_obj.mode == "only_python" else "text" 
-        
+        key = "content" if mode == "only_python" else "text"
+
         encoded = (
             self.model.tokenizer.encode(
                 sample.get(key),
@@ -186,7 +186,7 @@ class Evaluation:
         path += f"mode={mode.replace('_', '-')}_"
 
         # path += f"layers-{'-'.join(str(item) for item in self.layers)}_"
-        print(f"The base path of the actication for {mode}: {path}")
+        # print(f"The base path of the actication for {mode}: {path}")
         path_list = glob(path + "v*.pt")
 
         if len(path_list) == 0:
@@ -288,6 +288,7 @@ class Evaluation:
         )
 
     def save(self):
+        self.results["meta"] = self.get_meta_info()
         with open(self.save_path, "w") as f:
             json.dump(self.results, f, indent=2)
             print("Written to json file succesfully!")

@@ -12,26 +12,46 @@ from utils import load_data
 def evaluate(eval_obj: Evaluation):
     model = eval_obj.get_model()
     eval_obj.set_acts()
+    skip_tokens_modes = []
+    datasets = []
 
     for mode in eval_obj.modes:
         eval_obj.results[mode] = {}
-        skip_tokens = eval_obj.get_skip_tokens(mode)
+        skip_tokens_modes.append(eval_obj.get_skip_tokens(mode))
+        datasets.append(load_data(split="validation", mode=mode, iterable=True))
 
-        dataset = load_data(split="validation", mode=mode, iterable=True)
+    ic_idx = 0
+    used_ics = []
 
-        for ic in eval_obj.ics:
-            print(f"Mode: {mode}.   Injection Coefficient: {ic}", flush=True)
-            # clear and set the activations to be used in the forward pass
-            model.reset_all()
-            for layer in eval_obj.layers:
-                # this will only be one layer if mean is false, see evaluation.py
-                model.set_add_activations(layer, ic * eval_obj.acts[layer])
+    # stop when score is below certain level, see below
+    keep_going = True
+    while keep_going:
+        try:
+            ic = eval_obj.ics[ic_idx]
+        except IndexError:
+            break
+        # store the float of all the used injection coefficients
+        used_ics.append(ic.item())
+        print(f"\n----\nInjection Coefficient: {ic} index: {ic_idx}", flush=True)
+        # clear and set the activations to be used in the forward pass
+        model.reset_all()
+        for layer in eval_obj.layers:
+            # this will only be one layer if mean is false, see evaluation.py
+            model.set_add_activations(layer, ic * eval_obj.acts[layer])
 
+        for mode, dataset, skip_tokens in zip(
+            eval_obj.modes, datasets, skip_tokens_modes
+        ):
             # init list for storing results for this injection coefficient
             ic_results = []
             analyzed_tokens = 0
+            # sometimes there are many results with low scores, keep track and
+            # go to next if it has occured >= 5 times
+            lower_than_15_percent = 0 
 
             for sample in dataset:
+                # print(f"sample: {sample}")
+                # print(dataset.__dir__)
                 start_time = time.perf_counter()
 
                 if analyzed_tokens > eval_obj.total_tokens_per_ic:
@@ -60,6 +80,36 @@ def evaluate(eval_obj: Evaluation):
                 ic_results_dict[key] = list(ic_results[:, i])
             eval_obj.results[mode][f"injection_coefficients_{ic}"] = ic_results_dict
 
+            # select the next ic based on the score of the first mode
+            if mode == eval_obj.modes[0]:
+                avg_top1_score = np.average(ic_results[:, 0], weights=ic_results[:, 4])
+                print(f"Top1 score:{avg_top1_score}",  flush=True)
+
+                if ic_idx == 0:
+                    default_score = avg_top1_score
+                    ic_idx += 1
+                    continue
+                
+                relative_score = avg_top1_score / default_score
+                if relative_score > 0.99:
+                    ic_idx += 5
+                elif relative_score > 0.98:
+                    ic_idx += 3
+                elif relative_score < 0.05:
+                    keep_going = False
+                elif relative_score < 0.15:
+                    lower_than_15_percent += 1
+                    if lower_than_15_percent >= 5:
+                        keep_going = False
+                    ic_idx += 5
+                else:
+                    ic_idx += 1
+
+                if ic_idx != 0:
+                    print(f"Relative score: {round(avg_top1_score / default_score, 5)}", flush=True)
+
+    # save the used injection coefficients
+    eval_obj.set_used_ics(used_ics)
     eval_obj.save()
 
 
@@ -83,13 +133,6 @@ def arg_parser():
     parser.add_argument("--mean", default=True, action=argparse.BooleanOptionalAction)
 
     # default list
-    # ics means injection coefficients
-    parser.add_argument(
-        "--ics",
-        nargs="+",
-        type=float,
-        default=[0, 20, 40, 75, 100, 150, 200, 250, 300, 400, 500],
-    )
     parser.add_argument("--layers", nargs="+", type=int, default=[29])
 
     # default str
@@ -113,12 +156,14 @@ def arg_parser():
         choices=["all", "only_text", "only_code", "random", "only_python"],
         default="",
     )
+    # this must have length of 2!, and x-axis mode must be first because
+    # it determines the injection coefficients
     parser.add_argument(
         "--modes",
         nargs="+",
         type=str,
         choices=["all", "only_text", "only_code", "only_python"],
-        default=["only_text", "only_code"]
+        default=["only_code", "only_text"],
     )
     return parser.parse_args()
 
@@ -134,12 +179,13 @@ def main():
         args.chat,
         args.truncation,
         args.mean,
-        args.ics,
+        # args.ics,
         args.layers,
         args.model_params,
         args.dtype,
         args.pos_acts,
         args.neg_acts,
+        args.modes,
     )
 
     print(f"Eval object: {eval_obj.__dict__}")

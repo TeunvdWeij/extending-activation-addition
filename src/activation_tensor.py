@@ -67,9 +67,7 @@ class ActivationTensor:
 
         if not self.mean:
             mean_str = f"layer={self.layer_idx}"
-            save_path = (
-                f"{folders}mode={self.mode.replace('_', '-')}_{mean_str}_v{self.version}.pt"
-            )
+            save_path = f"{folders}mode={self.mode.replace('_', '-')}_{mean_str}_v{self.version}.pt"
         else:
             save_path = (
                 f"{folders}mode={self.mode.replace('_', '-')}_v{self.version}.pt"
