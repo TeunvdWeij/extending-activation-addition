@@ -22,6 +22,7 @@ def evaluate(eval_obj: Evaluation):
 
     ic_idx = 0
     used_ics = []
+    default_scores = {}
 
     # stop when score is below certain level, see below
     keep_going = True
@@ -31,7 +32,10 @@ def evaluate(eval_obj: Evaluation):
         except IndexError:
             break
         # store the float of all the used injection coefficients
-        used_ics.append(ic.item())
+        if eval_obj.iter_over_all_ics:
+            used_ics.append(ic)
+        else:
+            used_ics.append(ic.item())
         print(f"\n----\nInjection Coefficient: {ic} index: {ic_idx}", flush=True)
         # clear and set the activations to be used in the forward pass
         model.reset_all()
@@ -50,8 +54,6 @@ def evaluate(eval_obj: Evaluation):
             lower_than_15_percent = 0 
 
             for sample in dataset:
-                # print(f"sample: {sample}")
-                # print(dataset.__dir__)
                 start_time = time.perf_counter()
 
                 if analyzed_tokens > eval_obj.total_tokens_per_ic:
@@ -80,17 +82,29 @@ def evaluate(eval_obj: Evaluation):
                 ic_results_dict[key] = list(ic_results[:, i])
             eval_obj.results[mode][f"injection_coefficients_{ic}"] = ic_results_dict
 
+            avg_top1_score = np.average(ic_results[:, 0], weights=ic_results[:, 4])
+            print(f"Top1 score {mode}: {avg_top1_score}",  flush=True)
+            if ic_idx == 0:
+                default_scores[mode] = avg_top1_score
+            # because the ic_idx is already increased with the previous mode
+            elif mode == eval_obj.modes[1] and ic_idx == 1:
+                    default_scores[mode] = avg_top1_score
+            else:
+                relative_score = avg_top1_score / default_scores[mode]
+                print(f"Relative score for {mode}: {round(avg_top1_score / default_scores[mode], 5)}\n", flush=True)
+
             # select the next ic based on the score of the first mode
             if mode == eval_obj.modes[0]:
-                avg_top1_score = np.average(ic_results[:, 0], weights=ic_results[:, 4])
-                print(f"Top1 score:{avg_top1_score}",  flush=True)
-
-                if ic_idx == 0:
-                    default_score = avg_top1_score
+                # here just iterate over loop, will break when idx error arises
+                if eval_obj.iter_over_all_ics:
                     ic_idx += 1
                     continue
-                
-                relative_score = avg_top1_score / default_score
+
+                # choose ic_idx based on performance if ics are not manually given
+                if ic_idx == 0:
+                    ic_idx += 1
+                    continue
+
                 if relative_score > 0.99:
                     ic_idx += 5
                 elif relative_score > 0.98:
@@ -105,8 +119,6 @@ def evaluate(eval_obj: Evaluation):
                 else:
                     ic_idx += 1
 
-                if ic_idx != 0:
-                    print(f"Relative score: {round(avg_top1_score / default_score, 5)}", flush=True)
 
     # save the used injection coefficients
     eval_obj.set_used_ics(used_ics)
@@ -133,7 +145,11 @@ def arg_parser():
     parser.add_argument("--mean", default=True, action=argparse.BooleanOptionalAction)
 
     # default list
+    # NOTE: this is about which layers to add activations to at the same time during inference
+    # it is not about running the same experiment for multiple layers in different experiments.
     parser.add_argument("--layers", nargs="+", type=int, default=[29])
+
+    parser.add_argument("--ics", nargs="+", type=float, default=None)
 
     # default str
     parser.add_argument(
@@ -179,7 +195,7 @@ def main():
         args.chat,
         args.truncation,
         args.mean,
-        # args.ics,
+        args.ics,
         args.layers,
         args.model_params,
         args.dtype,

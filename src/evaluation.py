@@ -21,7 +21,7 @@ class Evaluation:
         chat,
         truncation,
         mean,
-        # ics,
+        ics,
         layers,
         model_params,
         dtype,
@@ -36,7 +36,6 @@ class Evaluation:
         self.chat = chat
         self.truncation = truncation
         self.mean = mean
-        # self.ics = ics
 
         if not self.mean and len(layers) > 1:
             raise ValueError("If mean is False, only one layer can be used")
@@ -65,9 +64,21 @@ class Evaluation:
 
         self.model_name = get_model_name(model_params, chat)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.ics = torch.logspace(
-            start=0, end=4, base=10, steps=50, dtype=float, device=self.device
-        )
+        # set the range of injection coefficients to be tested.
+        # 0 is prepended to get the model's performance without activation steering.
+        if ics is not None:
+            assert ics[0] == 0, "First injection coefficient must be 0!"
+            self.ics = ics
+            self.iter_over_all_ics = True 
+        else:
+            self.ics = torch.cat(
+                (
+                    torch.tensor([0]),
+                    torch.logspace(start=-1, end=3, base=10, steps=50, dtype=float),
+                )
+            ).to(self.device)
+            self.iter_over_all_ics = False 
+
         self.modes = modes
 
         self.acts = None
@@ -101,7 +112,7 @@ class Evaluation:
             "mean": self.mean,
             "pos_acts": self.pos_acts,
             "neg_acts": self.neg_acts,
-            "used_ics": self.used_ics
+            "used_ics": self.used_ics,
         }
         return meta_data
 
@@ -119,7 +130,7 @@ class Evaluation:
         return ic_res
 
     def generate_save_path_string(self):
-        save_path = f"results/v_{self.version}.json"
+        save_path = f"results/coding/v_{self.version}.json"
         assert not os.path.isfile(
             save_path
         ), "File already exists, can't overwrite file."
