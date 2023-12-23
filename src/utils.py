@@ -1,6 +1,7 @@
 import json
 import subprocess
 import torch
+import random
 
 from torch.nn.functional import log_softmax
 from datasets import load_dataset  # type: ignore
@@ -55,7 +56,7 @@ def get_skip_tokens(mode="all", skip="skip50", data_type="tokens_int"):
     list with skipped tokens
     """
 
-    with open("data/skip_tokens.json", "r") as f:
+    with open("data/skip_tokens/skip_tokens.json", "r") as f:
         skip_tokens = json.load(f)
 
     return skip_tokens[mode][skip][data_type]
@@ -167,3 +168,31 @@ def get_subset_from_dataset(dataset, num_samples, mode):
     else:
         key = "text"
     return [next(dataset)[key] for _ in range(num_samples)]
+
+
+def encode(model, text):
+    encoded = model.tokenizer(
+        text, truncation=True, max_length=4096, return_tensors="pt"
+    )
+    return encoded["input_ids"].detach().to(model.device)
+
+    
+
+def load_multi_steering_data():
+    random.seed(13)
+    dataset_names = [
+            "myopic",
+            "wealth_seeking", 
+            "sycophancy",
+            "agreeableness",
+            "anti_immigration",
+        ]
+
+    datasets = {}
+    for name in dataset_names:
+        with open(f"data/datasets/{name}.json", "r") as f:
+            dataset = json.load(f)
+            random.shuffle(dataset)
+            datasets[name] = dataset
+
+    return datasets
