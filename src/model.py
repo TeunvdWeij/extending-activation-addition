@@ -54,6 +54,8 @@ class Llama2Helper:
         for i, layer in enumerate(self.model.model.layers):
             self.model.model.layers[i] = BlockOutputWrapper(layer)
 
+        self.n_layers = len(self.model.model.layers)
+
     def generate_text(self, prompt, do_sample=False, temperature=1.0, max_length=100):
         inputs = self.tokenizer(prompt, return_tensors="pt")
         generate_ids = self.model.generate(
