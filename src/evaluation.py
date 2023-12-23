@@ -254,7 +254,10 @@ class Evaluation:
             neg_sum = torch.tensor((0))
 
         # set acts after normalizing
-        self.acts = normalize(pos_sum - neg_sum, dim=-1, p=2)
+        # self.acts = normalize(pos_sum - neg_sum, dim=-1, p=2)
+        # test without normalizing
+        self.acts = pos_sum - neg_sum
+        print(f"ACTS NORM: {torch.norm(self.acts, dim=-1, p=2)}")
 
     def get_skip_tokens(self, mode="all", skip="skip50", data_type="tokens_int"):
         """Opens the skip tokens json file and returns a tensor"""
