@@ -106,7 +106,6 @@ class Evaluation:
             "total_tokens_per_ic": self.total_tokens_per_ic,
             "max_seq_length": self.max_seq_length,
             "layers": self.layers,
-            # "injection_coefficients": self.used_ics,
             "dtype": str(self.dtype),  # for json serialization
             "truncation": self.truncation,
             "mean": self.mean,
