@@ -17,7 +17,7 @@ class ActivationTensor:
         chat,
         layer_idx,
         max_seq_length,
-        truncation, #truncation is unused
+        truncation,  # truncation is unused
         mean,
         dtype,
     ):
