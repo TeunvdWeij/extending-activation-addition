@@ -69,7 +69,7 @@ class Evaluation:
         if ics is not None:
             assert ics[0] == 0, "First injection coefficient must be 0!"
             self.ics = ics
-            self.iter_over_all_ics = True 
+            self.iter_over_all_ics = True
         else:
             self.ics = torch.cat(
                 (
@@ -77,7 +77,7 @@ class Evaluation:
                     torch.logspace(start=-1, end=3, base=10, steps=50, dtype=float),
                 )
             ).to(self.device)
-            self.iter_over_all_ics = False 
+            self.iter_over_all_ics = False
 
         self.modes = modes
 
@@ -173,14 +173,15 @@ class Evaluation:
                 )
 
     def generate_random_acts(self):
+        # TODO: remove this when 7.15 & 7.16 have been ran
         print("Warning, random activations have not been thoroughly tested.")
         if self.model_params == "7b":
             if self.mean:
-                random_acts = torch.rand((32, 4096)).to(self.dtype).to(self.device)
+                random_acts = torch.randn((32, 4096)).to(self.dtype).to(self.device)
                 random_acts = normalize(random_acts, p=2, dim=1)
                 return random_acts
             else:
-                random_acts = torch.rand((1, 4096)).to(self.dtype).to(self.device)
+                random_acts = torch.randn((1, 4096)).to(self.dtype).to(self.device)
                 random_acts = normalize(random_acts, p=2, dim=1)
                 return random_acts
 
@@ -257,7 +258,7 @@ class Evaluation:
 
     def get_skip_tokens(self, mode="all", skip="skip50", data_type="tokens_int"):
         """Opens the skip tokens json file and returns a tensor"""
-        with open("data/skip_tokens.json", "r") as f:
+        with open("data/skip_tokens/skip_tokens.json", "r") as f:
             skip_tokens = json.load(f)
 
         return torch.tensor(skip_tokens[mode][skip][data_type]).to(self.device)
