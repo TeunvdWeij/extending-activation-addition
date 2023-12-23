@@ -51,7 +51,7 @@ def evaluate(eval_obj: Evaluation):
             analyzed_tokens = 0
             # sometimes there are many results with low scores, keep track and
             # go to next if it has occured >= 5 times
-            lower_than_15_percent = 0 
+            lower_than_15_percent = 0
 
             for sample in dataset:
                 start_time = time.perf_counter()
@@ -83,15 +83,18 @@ def evaluate(eval_obj: Evaluation):
             eval_obj.results[mode][f"injection_coefficients_{ic}"] = ic_results_dict
 
             avg_top1_score = np.average(ic_results[:, 0], weights=ic_results[:, 4])
-            print(f"Top1 score {mode}: {avg_top1_score}",  flush=True)
+            print(f"Top1 score {mode}: {avg_top1_score}", flush=True)
             if ic_idx == 0:
                 default_scores[mode] = avg_top1_score
             # because the ic_idx is already increased with the previous mode
             elif mode == eval_obj.modes[1] and ic_idx == 1:
-                    default_scores[mode] = avg_top1_score
+                default_scores[mode] = avg_top1_score
             else:
                 relative_score = avg_top1_score / default_scores[mode]
-                print(f"Relative score for {mode}: {round(avg_top1_score / default_scores[mode], 5)}\n", flush=True)
+                print(
+                    f"Relative score for {mode}: {round(avg_top1_score / default_scores[mode], 5)}\n",
+                    flush=True,
+                )
 
             # select the next ic based on the score of the first mode
             if mode == eval_obj.modes[0]:
@@ -118,7 +121,6 @@ def evaluate(eval_obj: Evaluation):
                     ic_idx += 5
                 else:
                     ic_idx += 1
-
 
     # save the used injection coefficients
     eval_obj.set_used_ics(used_ics)
@@ -164,6 +166,7 @@ def arg_parser():
         type=str,
         choices=["all", "only_text", "only_code", "random", "only_python"],
         default="",
+        required=False,
     )
     parser.add_argument(
         "--neg_acts",
@@ -171,6 +174,7 @@ def arg_parser():
         type=str,
         choices=["all", "only_text", "only_code", "random", "only_python"],
         default="",
+        required=False,
     )
     # this must have length of 2!, and x-axis mode must be first because
     # it determines the injection coefficients
