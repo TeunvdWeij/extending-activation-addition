@@ -62,6 +62,7 @@ def arg_parser():
         "--mode",
         type=str,
         choices=["only_code", "only_text", "all", "only_python"],
+        require=True,
     )
 
     parser.add_argument("--version", type=str)
