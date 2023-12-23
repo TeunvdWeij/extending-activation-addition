@@ -113,6 +113,7 @@ class Evaluation:
             "pos_acts": self.pos_acts,
             "neg_acts": self.neg_acts,
             "used_ics": self.used_ics,
+            "modes": self.modes,
         }
         return meta_data
 
