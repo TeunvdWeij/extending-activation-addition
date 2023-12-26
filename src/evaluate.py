@@ -3,11 +3,26 @@ import time
 import argparse
 import numpy as np
 
-
 from evaluation import Evaluation
 
 from utils import load_data
 
+OUT_OF_RANGE_IDX = 10**100
+
+def determine_next_step(current_idx, relative_score):
+    # set next index based on performance
+    next_idx = current_idx
+    if relative_score < 0.05:
+        next_idx = OUT_OF_RANGE_IDX
+    elif relative_score < 0.15:
+        # take larger steps, sometimes the score gets stuck at low levels,
+        # which leads to many unnecessary data points and computation
+        next_idx += 5
+    # regular continuation
+    else:
+        next_idx += 1
+
+    return next_idx
 
 def evaluate(eval_obj: Evaluation):
     model = eval_obj.get_model()
@@ -25,12 +40,9 @@ def evaluate(eval_obj: Evaluation):
     default_scores = {}
 
     # stop when score is below certain level, see below
-    keep_going = True
-    while keep_going:
-        try:
-            ic = eval_obj.ics[ic_idx]
-        except IndexError:
-            break
+    total_ics = len(eval_obj.ics)
+    while ic_idx < total_ics:
+        ic = eval_obj.ics[ic_idx]
         # store the float of all the used injection coefficients
         if eval_obj.iter_over_all_ics:
             used_ics.append(ic)
@@ -51,8 +63,6 @@ def evaluate(eval_obj: Evaluation):
             analyzed_tokens = 0
             # sometimes there are many results with low scores, keep track and
             # go to next if it has occured >= 5 times
-            lower_than_15_percent = 0
-
             for sample in dataset:
                 start_time = time.perf_counter()
 
@@ -96,31 +106,13 @@ def evaluate(eval_obj: Evaluation):
                     flush=True,
                 )
 
-            # select the next ic based on the score of the first mode
+            # only change id_idx for one mode, otherwise ics are skipped.
             if mode == eval_obj.modes[0]:
-                # here just iterate over loop, will break when idx error arises
-                if eval_obj.iter_over_all_ics:
-                    ic_idx += 1
-                    continue
-
-                # choose ic_idx based on performance if ics are not manually given
-                if ic_idx == 0:
-                    ic_idx += 1
-                    continue
-
-                if relative_score > 0.99:
-                    ic_idx += 5
-                elif relative_score > 0.98:
-                    ic_idx += 3
-                elif relative_score < 0.05:
-                    keep_going = False
-                elif relative_score < 0.15:
-                    lower_than_15_percent += 1
-                    if lower_than_15_percent >= 5:
-                        keep_going = False
-                    ic_idx += 5
+                # if relative score has not been set yet, just move to the first ic
+                if ic_idx > 0:
+                    ic_idx = determine_next_step(ic_idx, relative_score)
                 else:
-                    ic_idx += 1
+                    ic_idx = 1
 
     # save the used injection coefficients
     eval_obj.set_used_ics(used_ics)
