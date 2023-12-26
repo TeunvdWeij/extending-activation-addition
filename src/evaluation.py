@@ -5,7 +5,6 @@ import torch
 import einops
 
 from glob import glob
-from torch.nn.functional import normalize
 
 from model import Llama2Helper
 from utils import get_hf_token, acc, get_model_name
@@ -19,6 +18,7 @@ class Evaluation:
         total_tokens_per_ic,
         max_seq_length,
         chat,
+        permute,
         truncation,
         mean,
         ics,
@@ -34,6 +34,7 @@ class Evaluation:
         self.total_tokens_per_ic = total_tokens_per_ic
         self.max_seq_length = max_seq_length
         self.chat = chat
+        self.permute = permute
         self.truncation = truncation
         self.mean = mean
 
@@ -172,23 +173,12 @@ class Evaluation:
                     "Activations do not match up. Maybe generated more activations with the same generation details."
                 )
 
-    def generate_random_acts(self):
-        # TODO: remove this when 7.15 & 7.16 have been ran
-        print("Warning, random activations have not been thoroughly tested.")
-        if self.model_params == "7b":
-            if self.mean:
-                random_acts = torch.randn((32, 4096)).to(self.dtype).to(self.device)
-                random_acts = normalize(random_acts, p=2, dim=1)
-                return random_acts
-            else:
-                random_acts = torch.randn((1, 4096)).to(self.dtype).to(self.device)
-                random_acts = normalize(random_acts, p=2, dim=1)
-                return random_acts
-
-        else:
-            raise ValueError(("Random acts not implemented for this model."))
-
-        assert self.acts is None, "Acts are not None, cannot overwwrite."
+    def permute_acts(self, acts):
+        # shuffles/permutes the activations within each layer 
+        for i in range(len(acts)):
+            acts[i] = acts[i][torch.randperm(acts[i].numel())]
+            
+        return acts
 
     def get_acts_path(self, mode):
         # finding the correct file name, bit hacky but is faster than loading many activations
@@ -253,6 +243,9 @@ class Evaluation:
         else:
             neg_sum = torch.tensor((0))
 
+        if self.permute:
+            pos_sum = self.permute_acts(pos_sum)
+            neg_sum = self.permute_acts(neg_sum)
         # set acts without normalizing
         self.acts = pos_sum - neg_sum
 

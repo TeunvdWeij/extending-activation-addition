@@ -133,6 +133,7 @@ def arg_parser():
 
     # default bools
     parser.add_argument("--chat", default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--permute", default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument(
         "--truncation", default=True, action=argparse.BooleanOptionalAction
     )
@@ -141,7 +142,7 @@ def arg_parser():
     # default list
     # NOTE: this is about which layers to add activations to at the same time during inference
     # it is not about running the same experiment for multiple layers in different experiments.
-    parser.add_argument("--layers", nargs="+", type=int, default=[29])
+    parser.add_argument("--layers", nargs="+", type=int, default=[15])
 
     parser.add_argument("--ics", nargs="+", type=float, default=None)
 
@@ -189,6 +190,7 @@ def main():
         args.total_tokens_per_ic,
         args.max_seq_length,
         args.chat,
+        args.permute,
         args.truncation,
         args.mean,
         args.ics,
