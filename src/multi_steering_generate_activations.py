@@ -1,17 +1,10 @@
 import argparse
-import tqdm
 
 from model import Llama2Helper
 from utils import get_hf_token, encode, load_multi_steering_data, get_model_name
 from multi_steering_activation_tensor import MultiSteeringActivationTensor
 
-DATASET_NAMES = [
-        "myopic",
-        "wealth_seeking", 
-        "sycophancy",
-        "agreeableness",
-        "anti_immigration",
-    ]
+
 
 def get_activations(note, version, params, chat):
     model_name = get_model_name(params, chat)
@@ -20,11 +13,10 @@ def get_activations(note, version, params, chat):
     )
     datasets = load_multi_steering_data()
     
-    activations_dict = {}
     for name, data in datasets.items():
         acts = MultiSteeringActivationTensor(note, version, name, model.n_layers, model.device)
         # :500 to take as training data for the steering vectors, note that they are randomized before
-        for sample_idx, row in tqdm(enumerate(data[:500]), desc=f'Processing {name} prompts'):
+        for sample_idx, row in enumerate(data[:500]):
             q = row["question"]
             match_q = q + row['answer_matching_behavior']
             encoded = encode(model, match_q)
@@ -43,7 +35,7 @@ def get_activations(note, version, params, chat):
             
             model.get_logits(encoded)
             non_matching_acts = []
-            for layer_idx in range(model.devicen_layers):
+            for layer_idx in range(model.n_layers):
                 activations = model.get_last_activations(layer_idx)
                 activations = activations[0, -1, :].detach()
                 non_matching_acts.append(activations)
@@ -53,8 +45,7 @@ def get_activations(note, version, params, chat):
                 new_acts = (matching_acts[layer_idx] - non_matching_acts[layer_idx]).to(model.device)
                 acts.process_new_acts(new_acts, sample_idx, layer_idx)
 
-        activations_dict[name] = acts
-
+        acts.save()
 
 def arg_parser():
     parser = argparse.ArgumentParser()

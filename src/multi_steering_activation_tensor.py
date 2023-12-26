@@ -43,10 +43,10 @@ class MultiSteeringActivationTensor:
         self.acts[layer_idx] = (self.acts[layer_idx] * i + new_acts) / (i + 1)
 
     def generate_save_path_string(self):
-        folder = "data/activations/multi_steering/"
+        folder = "data/activations/Llama-2-7b/multi_steering/"
 
         if not os.path.isdir(folder):
-            raise FileNotFoundError("Path does not exist.")
+            raise FileNotFoundError(f"Path does not exist.\nThe folder path was: {folder}")
         save_path = folder + f"{self.name}.pt"
 
         if os.path.isfile(save_path):
@@ -59,6 +59,6 @@ class MultiSteeringActivationTensor:
         self.generate_save_path_string()
         try:
             torch.save(self, self.save_path)
-            print(f"SUCCESS: Tensor saved with metadata at {self.save_path}")
+            print(f"\nSUCCESS: Tensor saved with metadata at {self.save_path}")
         except Exception as e:
             print(f"FAILED: Could not save the tensor. Error: {e}")
