@@ -196,3 +196,18 @@ def load_multi_steering_data():
             datasets[name] = dataset
 
     return datasets
+
+def load_multi_steering_acts(names=None):
+    if names is None:
+        names = [
+            "myopic",
+            "wealth_seeking", 
+            "sycophancy",
+            "agreeableness",
+            "anti_immigration",
+        ]
+    acts = {}
+    for name in names:
+        acts[name] = torch.load(f"../data/activations/Llama-2-7b/multi_steering/{name}.pt")
+
+    return acts
