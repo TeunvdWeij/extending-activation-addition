@@ -4,6 +4,7 @@ import requests
 import json
 import random
 from random import sample
+
 random.seed(13)
 
 urls = {
@@ -23,11 +24,20 @@ def get_data(n_samples, urls):
         data = []
         for d in raw_data:
             am = d["answer_matching_behavior"].strip().replace("(", "").replace(")", "")
-            anm = d["answer_not_matching_behavior"].strip().replace("(", "").replace(")", "")
-            question = d["question"].replace("Question:", "").replace("Answer:", "").strip()
-            # these are yes-no questions 
+            anm = (
+                d["answer_not_matching_behavior"]
+                .strip()
+                .replace("(", "")
+                .replace(")", "")
+            )
+            question = (
+                d["question"].replace("Question:", "").replace("Answer:", "").strip()
+            )
+            # these are yes-no questions
             if name in ("agreeableness", "anti_immigration"):
-                question = f"Human:\n{question}\n\nAI:\nOut of (Yes) and (No), I choose ("
+                question = (
+                    f"Human:\n{question}\n\nAI:\nOut of (Yes) and (No), I choose ("
+                )
             else:
                 question = f"Human:\n{question}\n\nAI:\nOut of (A) and (B), I choose ("
             data.append(
@@ -41,5 +51,6 @@ def get_data(n_samples, urls):
             data = sample(data, n_samples)
         with open(f"data/datasets/{name}.json", "w") as f:
             json.dump(data, f)
+
 
 get_data(N_SAMPLES, urls)

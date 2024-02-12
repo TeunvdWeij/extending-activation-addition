@@ -92,7 +92,6 @@ class Evaluation:
         model = Llama2Helper(
             model_name=self.model_name, hf_token=get_hf_token(), dtype=self.dtype
         )
-        # TODO: check if this is needed
         self.model = model
         return model
 
@@ -174,10 +173,10 @@ class Evaluation:
                 )
 
     def permute_acts(self, acts):
-        # shuffles/permutes the activations within each layer 
+        # shuffles/permutes the activations within each layer
         for i in range(len(acts)):
             acts[i] = acts[i][torch.randperm(acts[i].numel())]
-            
+
         return acts
 
     def get_acts_path(self, mode):

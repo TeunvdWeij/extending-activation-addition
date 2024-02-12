@@ -9,6 +9,7 @@ from utils import load_data
 
 OUT_OF_RANGE_IDX = 10**100
 
+
 def determine_next_step(current_idx, relative_score):
     # set next index based on performance
     next_idx = current_idx
@@ -23,6 +24,7 @@ def determine_next_step(current_idx, relative_score):
         next_idx += 1
 
     return next_idx
+
 
 def evaluate(eval_obj: Evaluation):
     model = eval_obj.get_model()
@@ -133,7 +135,9 @@ def arg_parser():
 
     # default bools
     parser.add_argument("--chat", default=True, action=argparse.BooleanOptionalAction)
-    parser.add_argument("--permute", default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument(
+        "--permute", default=False, action=argparse.BooleanOptionalAction
+    )
     parser.add_argument(
         "--truncation", default=True, action=argparse.BooleanOptionalAction
     )

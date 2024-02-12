@@ -17,7 +17,7 @@ class MultiSteeringActivationTensor:
         self.version = version
         self.name = name
 
-        # create the placeholder for the activations based on the number of 
+        # create the placeholder for the activations based on the number of
         # layers in model and the model's hidden dimension
         self.acts = torch.zeros((n_layers, 4096)).to(device)
 
@@ -32,7 +32,6 @@ class MultiSteeringActivationTensor:
         if torch.isnan(acts).any().item():
             raise ValueError("Nan value in acts.")
 
-
     def process_new_acts(self, new_acts, i, layer_idx):
         """
         new_acts: activations of model of certain layer
@@ -46,7 +45,9 @@ class MultiSteeringActivationTensor:
         folder = "data/activations/Llama-2-7b/multi_steering/"
 
         if not os.path.isdir(folder):
-            raise FileNotFoundError(f"Path does not exist.\nThe folder path was: {folder}")
+            raise FileNotFoundError(
+                f"Path does not exist.\nThe folder path was: {folder}"
+            )
         save_path = folder + f"{self.name}.pt"
 
         if os.path.isfile(save_path):
@@ -54,7 +55,7 @@ class MultiSteeringActivationTensor:
 
         print(f"SAVE PATH: {save_path}")
         self.save_path = save_path
-        
+
     def save(self):
         self.generate_save_path_string()
         try:

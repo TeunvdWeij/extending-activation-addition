@@ -33,16 +33,6 @@ def load_acts(device="cuda", pos_path=None, neg_path=None):
     return returns
 
 
-# adapted from https://github.com/pesvut/separability/blob/main/src/separability/eval.py
-def calc_perplexity(true_tokens: torch.Tensor, logits: torch.Tensor):
-    """Computes mean cross entropy loss."""
-
-    log_probs = log_softmax(logits, dim=-1)
-    # TODO: understand what this does
-    predicted_log_probs = log_probs.gather(dim=-1, index=true_tokens[..., None])[..., 0]
-    return torch.exp(torch.mean(-predicted_log_probs))
-
-
 def get_skip_tokens(mode="all", skip="skip50", data_type="tokens_int"):
     """
     Opens the skip tokens json file and returns a tensor from the specified elements.
@@ -176,17 +166,16 @@ def encode(model, text):
     )
     return encoded["input_ids"].detach().to(model.device)
 
-    
 
 def load_multi_steering_data():
     random.seed(13)
     dataset_names = [
-            "myopic",
-            "wealth_seeking", 
-            "sycophancy",
-            "agreeableness",
-            "anti_immigration",
-        ]
+        "myopic",
+        "wealth_seeking",
+        "sycophancy",
+        "agreeableness",
+        "anti_immigration",
+    ]
 
     datasets = {}
     for name in dataset_names:
@@ -197,11 +186,12 @@ def load_multi_steering_data():
 
     return datasets
 
+
 def load_multi_steering_acts(names=None):
     if names is None:
         names = [
             "myopic",
-            "wealth_seeking", 
+            "wealth_seeking",
             "sycophancy",
             "agreeableness",
             "anti_immigration",
