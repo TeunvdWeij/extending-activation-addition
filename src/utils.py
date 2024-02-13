@@ -3,7 +3,6 @@ import subprocess
 import torch
 import random
 
-from torch.nn.functional import log_softmax
 from datasets import load_dataset  # type: ignore
 
 
