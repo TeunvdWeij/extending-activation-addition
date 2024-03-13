@@ -1,5 +1,5 @@
 # Extending Activation Steering to Broad Skills and Multiple Behaviours
-You can find the paper here [Still add link].
+You can find the paper here: https://arxiv.org/abs/2403.05767 and the [tweet thread here](https://twitter.com/Teun_vd_Weij/status/1767728559416570049)!
 ## Abstract
 Current large language models have dangerous capabilities, which are likely to become more problematic in the future. Activation steering techniques can be used to reduce risks from these capabilities. In this paper, we investigate the efficacy of activation steering for broad skills and multiple behaviours. First, by comparing the effects of reducing performance on general coding ability and Python-specific ability, we find that steering broader skills is competitive to steering narrower skills. Second, we steer models to become more or less myopic and wealth-seeking, among other behaviours. In our experiments, combining steering vectors for multiple different behaviours into one steering vector is largely unsuccessful. On the other hand, injecting individual steering vectors at different places in a model simultaneously is promising.
 
